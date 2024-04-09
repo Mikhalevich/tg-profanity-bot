@@ -11,6 +11,6 @@ func New() *profanity {
 	return &profanity{}
 }
 
-func (p *profanity) ProcessMessage(ctx context.Context, command string, arguments string) (string, error) {
+func (p *profanity) ReplaceMessage(ctx context.Context, msg string) (string, error) {
 	return "", nil
 }
