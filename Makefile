@@ -1,6 +1,6 @@
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 ROOT := $(dir $(MKFILE_PATH))
-GOBIN ?= $(ROOT)tools/bin
+GOBIN ?= $(ROOT)/tools/bin
 BIN_PATH ?= $(ROOT)/bin
 LINTER_NAME := golangci-lint
 LINTER_VERSION := v1.57.2
@@ -10,6 +10,14 @@ all: build
 .PHONY: build
 build:
 	go build -mod=vendor -o $(BIN_PATH)/bot ./cmd/bot/main.go
+
+.PHONY: test
+test:
+	go test ./...
+
+.PHONY: bench
+bench:
+	go test -bench=. ./...
 
 .PHONY: run
 run:

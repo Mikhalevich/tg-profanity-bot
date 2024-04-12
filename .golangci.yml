@@ -29,7 +29,6 @@ linters:
     - decorder
     - dogsled
     - dupl
-    - dupword
     - durationcheck
     - errcheck
     - errchkjson
@@ -43,7 +42,6 @@ linters:
     - funlen
     - ginkgolinter
     - gocheckcompilerdirectives
-    - gochecknoglobals
     - gochecknoinits
     - gochecksumtype
     - gocognit
@@ -98,7 +96,6 @@ linters:
     - tenv
     - testableexamples
     - testifylint
-    - testpackage
     - thelper
     - tparallel
     - typecheck
@@ -125,6 +122,9 @@ linters:
     - perfsprint
     - tagliatelle
     - varnamelen
+    - gochecknoglobals
+    - dupword
+    - testpackage
 
 issues:
   exclude-rules:

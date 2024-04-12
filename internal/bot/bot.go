@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"context"
 	"fmt"
 	"sync"
 
@@ -10,7 +9,7 @@ import (
 )
 
 type MessageReplacer interface {
-	ReplaceMessage(ctx context.Context, msg string) (string, error)
+	ReplaceMessage(msg string) string
 }
 
 type bot struct {
@@ -64,7 +63,6 @@ func (b *bot) ProcessUpdates(timeout int) {
 			defer wg.Done()
 
 			if err := b.processMessage(
-				context.Background(),
 				u.Message.MessageID,
 				u.Message.Chat.ID,
 				u.Message.Text,
@@ -77,13 +75,10 @@ func (b *bot) ProcessUpdates(timeout int) {
 	wg.Wait()
 }
 
-func (b *bot) processMessage(ctx context.Context, messageID int, chatID int64, msg string) error {
-	output, err := b.replacer.ReplaceMessage(ctx, msg)
-	if err != nil {
-		return fmt.Errorf("process message: %w", err)
-	}
+func (b *bot) processMessage(messageID int, chatID int64, msg string) error {
+	output := b.replacer.ReplaceMessage(msg)
 
-	if output != "" {
+	if output != msg {
 		return b.editMessage(messageID, chatID, output)
 	}
 
@@ -91,11 +86,18 @@ func (b *bot) processMessage(ctx context.Context, messageID int, chatID int64, m
 }
 
 func (b *bot) editMessage(messageID int, chatID int64, text string) error {
-	msg := tgbotapi.NewEditMessageText(chatID, messageID, text)
+	deletedMsg := tgbotapi.NewDeleteMessage(chatID, messageID)
 
-	if _, err := b.api.Send(msg); err != nil {
-		return fmt.Errorf("send: %w", err)
+	newMsg := tgbotapi.NewMessage(chatID, text)
+	newMsg.ReplyToMessageID = messageID
+
+	if _, err := b.api.Send(newMsg); err != nil {
+		return fmt.Errorf("send new: %w", err)
 	}
+
+	//nolint:errcheck
+	// disable due to api delete error
+	b.api.Send(deletedMsg)
 
 	return nil
 }
