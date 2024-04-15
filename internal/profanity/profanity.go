@@ -8,19 +8,17 @@ import (
 )
 
 type Matcher interface {
-	Match(in []byte) []int
+	Match(in []byte) []string
 }
 
 type profanity struct {
 	matcher Matcher
-	words   []string
 	symbol  byte
 }
 
-func New(matcher Matcher, words []string, symbol byte) *profanity {
+func New(matcher Matcher, symbol byte) *profanity {
 	return &profanity{
 		matcher: matcher,
-		words:   words,
 		symbol:  symbol,
 	}
 }
@@ -37,15 +35,12 @@ func (p *profanity) ReplaceMessage(msg string) string {
 func (p *profanity) wordsPositions(msg string) *position.SortedPositions {
 	var (
 		msgLen       = len(msg)
-		foundWordIDs = p.matcher.Match([]byte(msg))
+		foundedWords = p.matcher.Match([]byte(msg))
 		positions    = position.NewSortedPositions()
 	)
 
-	for _, index := range foundWordIDs {
-		var (
-			badWord = p.words[index]
-			offset  = 0
-		)
+	for _, badWord := range foundedWords {
+		offset := 0
 
 		for {
 			if offset >= msgLen {

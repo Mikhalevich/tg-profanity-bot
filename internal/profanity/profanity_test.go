@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
-	"github.com/cloudflare/ahocorasick"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/profanity/matcher"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -66,7 +66,7 @@ func (s *ProfanitySuit) SetupSuite() {
 		s.Fail("get bad words: %v", err)
 	}
 
-	s.p = New(ahocorasick.NewStringMatcher(words), words, '*')
+	s.p = New(matcher.NewAhocorasick(words), '*')
 }
 
 func (s *ProfanitySuit) TestReplacePredefined() {
@@ -84,7 +84,7 @@ func initProfanity(b *testing.B) *profanity {
 		b.Fatalf("get bad words: %v", err)
 	}
 
-	return New(ahocorasick.NewStringMatcher(words), words, '*')
+	return New(matcher.NewAhocorasick(words), '*')
 }
 
 func BenchmarkProfanityPredefined(b *testing.B) {

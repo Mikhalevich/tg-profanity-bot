@@ -8,13 +8,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/cloudflare/ahocorasick"
 	"github.com/jinzhu/configor"
 	"github.com/sirupsen/logrus"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/bot"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/profanity"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/profanity/matcher"
 )
 
 func main() {
@@ -95,5 +95,5 @@ func makeReplacer() (bot.MessageReplacer, error) {
 		return nil, fmt.Errorf("get bad words: %w", err)
 	}
 
-	return profanity.New(ahocorasick.NewStringMatcher(words), words, '*'), nil
+	return profanity.New(matcher.NewAhocorasick(words), '*'), nil
 }
