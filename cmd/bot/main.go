@@ -48,7 +48,7 @@ func main() {
 		defer cancel()
 
 		logger.Info("bot running...")
-		tgBot.ProcessUpdates(5)
+		tgBot.ProcessUpdates(cfg.UpdateTimeoutSeconds)
 	}()
 
 	terminate := make(chan os.Signal, 1)
