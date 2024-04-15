@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -14,13 +13,9 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/bot"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/profanity"
 )
-
-type config struct {
-	BotToken      string `yaml:"bot_token" required:"true"`
-	ProfanityFile string `yaml:"profanity_file" required:"true"`
-}
 
 func main() {
 	logger := logrus.New()
@@ -35,7 +30,7 @@ func main() {
 		return
 	}
 
-	replacer, err := makeReplacer(cfg.ProfanityFile)
+	replacer, err := makeReplacer()
 	if err != nil {
 		logger.WithError(err).Error("failed to init replacer")
 		return
@@ -82,11 +77,11 @@ func isDebugEnabled() bool {
 	return false
 }
 
-func loadConfig() (*config, error) {
+func loadConfig() (*config.Config, error) {
 	configFile := flag.String("config", "config/config.yaml", "telegram bot config file")
 	flag.Parse()
 
-	var cfg config
+	var cfg config.Config
 	if err := configor.Load(&cfg, *configFile); err != nil {
 		return nil, fmt.Errorf("load config: %w", err)
 	}
@@ -94,15 +89,10 @@ func loadConfig() (*config, error) {
 	return &cfg, nil
 }
 
-func makeReplacer(profanityFile string) (bot.MessageReplacer, error) {
-	f, err := os.Open(profanityFile)
+func makeReplacer() (bot.MessageReplacer, error) {
+	words, err := config.BadWords()
 	if err != nil {
-		return nil, fmt.Errorf("open profanity file: %w", err)
-	}
-
-	var words []string
-	if err := json.NewDecoder(f).Decode(&words); err != nil {
-		return nil, fmt.Errorf("decode profanity words: %w", err)
+		return nil, fmt.Errorf("get bad words: %w", err)
 	}
 
 	return profanity.New(ahocorasick.NewStringMatcher(words), words, '*'), nil

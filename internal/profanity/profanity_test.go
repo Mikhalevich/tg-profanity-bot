@@ -1,11 +1,10 @@
 package profanity
 
 import (
-	"encoding/json"
-	"os"
 	"strings"
 	"testing"
 
+	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
 	"github.com/cloudflare/ahocorasick"
 	"github.com/stretchr/testify/suite"
 )
@@ -46,7 +45,6 @@ var (
 		{Msg: "себе", ExpectedMsg: "себе"},
 		{Msg: "ебет", ExpectedMsg: "****"},
 		{Msg: "ебёт", ExpectedMsg: "****"},
-		{Msg: "GY8WV Soplagaitas GJAC1", ExpectedMsg: "GY8WV *********** GJAC1"},
 	}
 )
 
@@ -63,14 +61,9 @@ func TestProfanitySuit(t *testing.T) {
 }
 
 func (s *ProfanitySuit) SetupSuite() {
-	f, err := os.Open("../../config/profanity.json")
+	words, err := config.BadWords()
 	if err != nil {
-		s.Fail("open profanity file: %v", err)
-	}
-
-	var words []string
-	if err := json.NewDecoder(f).Decode(&words); err != nil {
-		s.Fail("decode profanity words: %v", err)
+		s.Fail("get bad words: %v", err)
 	}
 
 	s.p = New(ahocorasick.NewStringMatcher(words), words, '*')
@@ -86,14 +79,9 @@ func (s *ProfanitySuit) TestReplacePredefined() {
 func initProfanity(b *testing.B) *profanity {
 	b.Helper()
 
-	f, err := os.Open("../../config/profanity.json")
+	words, err := config.BadWords()
 	if err != nil {
-		b.Fatalf("open profanity file: %v", err)
-	}
-
-	var words []string
-	if err := json.NewDecoder(f).Decode(&words); err != nil {
-		b.Fatalf("decode profanity words: %v", err)
+		b.Fatalf("get bad words: %v", err)
 	}
 
 	return New(ahocorasick.NewStringMatcher(words), words, '*')
