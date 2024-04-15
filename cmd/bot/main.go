@@ -15,6 +15,7 @@ import (
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/profanity"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/profanity/matcher"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/profanity/replacer"
 )
 
 func main() {
@@ -95,5 +96,5 @@ func makeReplacer() (bot.MessageReplacer, error) {
 		return nil, fmt.Errorf("get bad words: %w", err)
 	}
 
-	return profanity.New(matcher.NewAhocorasick(words), '*'), nil
+	return profanity.New(matcher.NewAhocorasick(words), replacer.NewDynamicSymbol('*')), nil
 }

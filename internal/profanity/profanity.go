@@ -2,7 +2,6 @@ package profanity
 
 import (
 	"strings"
-	"unicode/utf8"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/profanity/internal/position"
 )
@@ -11,15 +10,19 @@ type Matcher interface {
 	Match(in []byte) []string
 }
 
-type profanity struct {
-	matcher Matcher
-	symbol  byte
+type Replacer interface {
+	Replace(text string) string
 }
 
-func New(matcher Matcher, symbol byte) *profanity {
+type profanity struct {
+	matcher  Matcher
+	replacer Replacer
+}
+
+func New(matcher Matcher, replacer Replacer) *profanity {
 	return &profanity{
-		matcher: matcher,
-		symbol:  symbol,
+		matcher:  matcher,
+		replacer: replacer,
 	}
 }
 
@@ -96,10 +99,12 @@ func (p *profanity) mangle(msg string, positions []int) string {
 		lastIndex = 0
 	)
 
+	builder.Grow(len(msg))
+
 	for i := 0; i < len(positions); i += 2 {
-		b := strings.Repeat(string(p.symbol), utf8.RuneCountInString(msg[positions[i]:positions[i+1]]))
+		censoredText := p.replacer.Replace(msg[positions[i]:positions[i+1]])
 		builder.WriteString(msg[lastIndex:positions[i]])
-		builder.WriteString(b)
+		builder.WriteString(censoredText)
 
 		lastIndex = positions[i+1]
 	}
