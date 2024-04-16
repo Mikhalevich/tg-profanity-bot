@@ -11,19 +11,19 @@ import (
 	"github.com/Mikhalevich/tg-profanity-bot/internal/profanity/replacer"
 )
 
-type ProfanityStatusTextSuit struct {
+type ProfanityStaticTextSuit struct {
 	*suite.Suite
 	p *profanity
 }
 
-func TestProfanityStatusTextSuit(t *testing.T) {
+func TestProfanityStaticTextSuit(t *testing.T) {
 	t.Parallel()
-	suite.Run(t, &ProfanityStatusTextSuit{
+	suite.Run(t, &ProfanityStaticTextSuit{
 		Suite: new(suite.Suite),
 	})
 }
 
-func (s *ProfanityStatusTextSuit) SetupSuite() {
+func (s *ProfanityStaticTextSuit) SetupSuite() {
 	words, err := config.BadWords()
 	if err != nil {
 		s.Fail("get bad words: %v", err)
@@ -32,7 +32,7 @@ func (s *ProfanityStatusTextSuit) SetupSuite() {
 	s.p = New(matcher.NewAhocorasick(words), replacer.NewStaticText("<< censored >>"))
 }
 
-func (s *ProfanityStatusTextSuit) TestAhocorasickStaticText() {
+func (s *ProfanityStaticTextSuit) TestAhocorasickStaticText() {
 	var (
 		tests = []struct {
 			Msg         string
