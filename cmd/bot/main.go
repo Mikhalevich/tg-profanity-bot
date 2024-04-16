@@ -37,7 +37,7 @@ func main() {
 		return
 	}
 
-	tgBot, err := bot.New(cfg.BotToken, isDebugEnabled(), replacer, logger.WithField("bot_name", "profanity_bot"))
+	tgBot, err := bot.New(cfg.Bot.Token, isDebugEnabled(), replacer, logger.WithField("bot_name", "profanity_bot"))
 	if err != nil {
 		logger.WithError(err).Error("configure bot")
 		return
@@ -49,7 +49,7 @@ func main() {
 		defer cancel()
 
 		logger.Info("bot running...")
-		tgBot.ProcessUpdates(cfg.UpdateTimeoutSeconds)
+		tgBot.ProcessUpdates(cfg.Bot.UpdateTimeoutSeconds)
 	}()
 
 	terminate := make(chan os.Signal, 1)
@@ -96,5 +96,5 @@ func makeReplacer() (bot.MessageReplacer, error) {
 		return nil, fmt.Errorf("get bad words: %w", err)
 	}
 
-	return profanity.New(matcher.NewAhocorasick(words), replacer.NewDynamicSymbol('*')), nil
+	return profanity.New(matcher.NewAhocorasick(words), replacer.NewDynamic("*")), nil
 }

@@ -102,8 +102,9 @@ func (p *profanity) mangle(msg string, positions []int) string {
 	builder.Grow(len(msg))
 
 	for i := 0; i < len(positions); i += 2 {
-		censoredText := p.replacer.Replace(msg[positions[i]:positions[i+1]])
 		builder.WriteString(msg[lastIndex:positions[i]])
+
+		censoredText := p.replacer.Replace(msg[positions[i]:positions[i+1]])
 		builder.WriteString(censoredText)
 
 		lastIndex = positions[i+1]

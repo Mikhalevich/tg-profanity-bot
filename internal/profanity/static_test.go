@@ -11,28 +11,28 @@ import (
 	"github.com/Mikhalevich/tg-profanity-bot/internal/profanity/replacer"
 )
 
-type ProfanityStaticTextSuit struct {
+type ProfanityStaticSuit struct {
 	*suite.Suite
 	p *profanity
 }
 
-func TestProfanityStaticTextSuit(t *testing.T) {
+func TestProfanityStaticSuit(t *testing.T) {
 	t.Parallel()
-	suite.Run(t, &ProfanityStaticTextSuit{
+	suite.Run(t, &ProfanityStaticSuit{
 		Suite: new(suite.Suite),
 	})
 }
 
-func (s *ProfanityStaticTextSuit) SetupSuite() {
+func (s *ProfanityStaticSuit) SetupSuite() {
 	words, err := config.BadWords()
 	if err != nil {
 		s.Fail("get bad words: %v", err)
 	}
 
-	s.p = New(matcher.NewAhocorasick(words), replacer.NewStaticText("<< censored >>"))
+	s.p = New(matcher.NewAhocorasick(words), replacer.NewStatic("<< censored >>"))
 }
 
-func (s *ProfanityStaticTextSuit) TestAhocorasickStaticText() {
+func (s *ProfanityStaticSuit) TestAhocorasickStatic() {
 	var (
 		tests = []struct {
 			Msg         string
@@ -81,7 +81,7 @@ func (s *ProfanityStaticTextSuit) TestAhocorasickStaticText() {
 	}
 }
 
-func initStaticText(b *testing.B) *profanity {
+func initStatic(b *testing.B) *profanity {
 	b.Helper()
 
 	words, err := config.BadWords()
@@ -89,10 +89,10 @@ func initStaticText(b *testing.B) *profanity {
 		b.Fatalf("get bad words: %v", err)
 	}
 
-	return New(matcher.NewAhocorasick(words), replacer.NewStaticText("<< censored >>"))
+	return New(matcher.NewAhocorasick(words), replacer.NewStatic("<< censored >>"))
 }
 
-func BenchmarkAhocorasickStaticTextPredefined(b *testing.B) {
+func BenchmarkAhocorasickStaticPredefined(b *testing.B) {
 	var (
 		tests = []struct {
 			Msg         string
@@ -134,7 +134,7 @@ func BenchmarkAhocorasickStaticTextPredefined(b *testing.B) {
 			{Msg: "ебёт", ExpectedMsg: "<< censored >>"},
 		}
 
-		p = initStaticText(b)
+		p = initStatic(b)
 	)
 
 	for i := 0; i < b.N; i++ {
@@ -144,24 +144,24 @@ func BenchmarkAhocorasickStaticTextPredefined(b *testing.B) {
 	}
 }
 
-func BenchmarkAhocorasickStaticTextSmallText(b *testing.B) {
-	p := initStaticText(b)
+func BenchmarkAhocorasickStaticSmallText(b *testing.B) {
+	p := initStatic(b)
 
 	for i := 0; i < b.N; i++ {
 		p.ReplaceMessage("some dildo small ass test cock case erotic")
 	}
 }
 
-func BenchmarkAhocorasickStaticTextMediumText(b *testing.B) {
-	p := initStaticText(b)
+func BenchmarkAhocorasickStaticMediumText(b *testing.B) {
+	p := initStatic(b)
 
 	for i := 0; i < b.N; i++ {
 		p.ReplaceMessage(strings.Repeat("some dildo small ass test cock case erotic", 30))
 	}
 }
 
-func BenchmarkAhocorasickStaticTextLargeText(b *testing.B) {
-	p := initStaticText(b)
+func BenchmarkAhocorasickStaticLargeText(b *testing.B) {
+	p := initStatic(b)
 
 	for i := 0; i < b.N; i++ {
 		p.ReplaceMessage(strings.Repeat("some dildo small ass test cock case erotic", 30))

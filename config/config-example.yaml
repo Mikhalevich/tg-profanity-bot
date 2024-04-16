@@ -1,1 +1,9 @@
-bot_token: ""
+bot:
+  token: "tg-bot-token"
+  update_timeout_seconds: 5
+profanity:
+  # dynamic repeated symbol
+  dynamic: "*" 
+  # static text
+  static: "{censored}"
+

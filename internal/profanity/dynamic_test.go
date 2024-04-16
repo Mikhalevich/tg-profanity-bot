@@ -11,28 +11,28 @@ import (
 	"github.com/Mikhalevich/tg-profanity-bot/internal/profanity/replacer"
 )
 
-type ProfanityDynamicSymbolSuit struct {
+type ProfanityDynamicSuit struct {
 	*suite.Suite
 	p *profanity
 }
 
-func TestProfanityDynamicSymbolSuit(t *testing.T) {
+func TestProfanityDynamicSuit(t *testing.T) {
 	t.Parallel()
-	suite.Run(t, &ProfanityDynamicSymbolSuit{
+	suite.Run(t, &ProfanityDynamicSuit{
 		Suite: new(suite.Suite),
 	})
 }
 
-func (s *ProfanityDynamicSymbolSuit) SetupSuite() {
+func (s *ProfanityDynamicSuit) SetupSuite() {
 	words, err := config.BadWords()
 	if err != nil {
 		s.Fail("get bad words: %v", err)
 	}
 
-	s.p = New(matcher.NewAhocorasick(words), replacer.NewDynamicSymbol('*'))
+	s.p = New(matcher.NewAhocorasick(words), replacer.NewDynamic("*"))
 }
 
-func (s *ProfanityDynamicSymbolSuit) TestAhocorasickDynamicSymbol() {
+func (s *ProfanityDynamicSuit) TestAhocorasickDynamic() {
 	var (
 		tests = []struct {
 			Msg         string
@@ -78,7 +78,7 @@ func (s *ProfanityDynamicSymbolSuit) TestAhocorasickDynamicSymbol() {
 	}
 }
 
-func initDynamicSymbol(b *testing.B) *profanity {
+func initDynamic(b *testing.B) *profanity {
 	b.Helper()
 
 	words, err := config.BadWords()
@@ -86,10 +86,10 @@ func initDynamicSymbol(b *testing.B) *profanity {
 		b.Fatalf("get bad words: %v", err)
 	}
 
-	return New(matcher.NewAhocorasick(words), replacer.NewDynamicSymbol('*'))
+	return New(matcher.NewAhocorasick(words), replacer.NewDynamic("*"))
 }
 
-func BenchmarkAhocorasickDynamicSymcolPredefined(b *testing.B) {
+func BenchmarkAhocorasickDynamicPredefined(b *testing.B) {
 	var (
 		tests = []struct {
 			Msg         string
@@ -128,7 +128,7 @@ func BenchmarkAhocorasickDynamicSymcolPredefined(b *testing.B) {
 			{Msg: "ебёт", ExpectedMsg: "****"},
 		}
 
-		p = initDynamicSymbol(b)
+		p = initDynamic(b)
 	)
 
 	for i := 0; i < b.N; i++ {
@@ -138,24 +138,24 @@ func BenchmarkAhocorasickDynamicSymcolPredefined(b *testing.B) {
 	}
 }
 
-func BenchmarkAhocorasickDynamicSymcolSmallText(b *testing.B) {
-	p := initDynamicSymbol(b)
+func BenchmarkAhocorasickDynamicSmallText(b *testing.B) {
+	p := initDynamic(b)
 
 	for i := 0; i < b.N; i++ {
 		p.ReplaceMessage("some dildo small ass test cock case erotic")
 	}
 }
 
-func BenchmarkAhocorasickDynamicSymcolMediumText(b *testing.B) {
-	p := initDynamicSymbol(b)
+func BenchmarkAhocorasickDynamicMediumText(b *testing.B) {
+	p := initDynamic(b)
 
 	for i := 0; i < b.N; i++ {
 		p.ReplaceMessage(strings.Repeat("some dildo small ass test cock case erotic", 30))
 	}
 }
 
-func BenchmarkAhocorasickDynamicSymcolLargeText(b *testing.B) {
-	p := initDynamicSymbol(b)
+func BenchmarkAhocorasickDynamicLargeText(b *testing.B) {
+	p := initDynamic(b)
 
 	for i := 0; i < b.N; i++ {
 		p.ReplaceMessage(strings.Repeat("some dildo small ass test cock case erotic", 30))
