@@ -31,7 +31,7 @@ func main() {
 		return
 	}
 
-	replacer, err := makeReplacer()
+	replacer, err := makeReplacer(cfg.Profanity)
 	if err != nil {
 		logger.WithError(err).Error("failed to init replacer")
 		return
@@ -90,11 +90,15 @@ func loadConfig() (*config.Config, error) {
 	return &cfg, nil
 }
 
-func makeReplacer() (bot.MessageReplacer, error) {
+func makeReplacer(cfg config.Profanity) (bot.MessageReplacer, error) {
 	words, err := config.BadWords()
 	if err != nil {
 		return nil, fmt.Errorf("get bad words: %w", err)
 	}
 
-	return profanity.New(matcher.NewAhocorasick(words), replacer.NewDynamic("*")), nil
+	if cfg.Dynamic != "" {
+		return profanity.New(matcher.NewAhocorasick(words), replacer.NewDynamic(cfg.Dynamic)), nil
+	}
+
+	return profanity.New(matcher.NewAhocorasick(words), replacer.NewStatic(cfg.Static)), nil
 }
