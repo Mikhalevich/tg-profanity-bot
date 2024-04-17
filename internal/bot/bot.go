@@ -58,11 +58,7 @@ func (b *bot) ProcessUpdates(timeout int) {
 		go func(u tgbotapi.Update) {
 			defer wg.Done()
 
-			if err := b.processMessage(
-				u.Message.MessageID,
-				u.Message.Chat.ID,
-				u.Message.Text,
-			); err != nil {
+			if err := b.processMessage(u.Message); err != nil {
 				b.logger.WithError(err).Error("process message")
 			}
 		}(update)
@@ -71,29 +67,43 @@ func (b *bot) ProcessUpdates(timeout int) {
 	wg.Wait()
 }
 
-func (b *bot) processMessage(messageID int, chatID int64, msg string) error {
-	output := b.replacer.ReplaceMessage(msg)
+func (b *bot) processMessage(msg *tgbotapi.Message) error {
+	mangledMsg := b.replacer.ReplaceMessage(msg.Text)
 
-	if output != msg {
-		return b.editMessage(messageID, chatID, output)
+	if mangledMsg != msg.Text {
+		formattedMsg := formatMessage(mangledMsg, userName(msg.From))
+		return b.editMessage(msg, formattedMsg)
 	}
 
 	return nil
 }
 
-func (b *bot) editMessage(messageID int, chatID int64, text string) error {
-	deletedMsg := tgbotapi.NewDeleteMessage(chatID, messageID)
+func userName(from *tgbotapi.User) string {
+	if from.UserName != "" {
+		return from.UserName
+	}
 
-	newMsg := tgbotapi.NewMessage(chatID, text)
-	newMsg.ReplyToMessageID = messageID
+	return fmt.Sprintf("%s %s", from.FirstName, from.LastName)
+}
+
+func formatMessage(msg string, fromUser string) string {
+	return fmt.Sprintf("Edited by profanity bot\nSender: %s\n\n%s", fromUser, msg)
+}
+
+func (b *bot) editMessage(originMsg *tgbotapi.Message, text string) error {
+	deletedMsg := tgbotapi.NewDeleteMessage(originMsg.Chat.ID, originMsg.MessageID)
+	//nolint:errcheck
+	// disabled due to api delete error
+	b.api.Send(deletedMsg)
+
+	newMsg := tgbotapi.NewMessage(originMsg.Chat.ID, text)
+	if originMsg.ReplyToMessage != nil {
+		newMsg.ReplyToMessageID = originMsg.ReplyToMessage.MessageID
+	}
 
 	if _, err := b.api.Send(newMsg); err != nil {
 		return fmt.Errorf("send new: %w", err)
 	}
-
-	//nolint:errcheck
-	// disable due to api delete error
-	b.api.Send(deletedMsg)
 
 	return nil
 }
