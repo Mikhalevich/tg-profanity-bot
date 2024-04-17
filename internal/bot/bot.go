@@ -20,7 +20,6 @@ type bot struct {
 
 func New(
 	token string,
-	isDebugEnabled bool,
 	replacer MessageReplacer,
 	logger *logrus.Entry,
 ) (*bot, error) {
@@ -28,8 +27,6 @@ func New(
 	if err != nil {
 		return nil, fmt.Errorf("create bot api: %w", err)
 	}
-
-	api.Debug = isDebugEnabled
 
 	return &bot{
 		api:      api,
@@ -48,7 +45,6 @@ func (b *bot) ProcessUpdates(timeout int) {
 
 	for update := range updates {
 		if update.Message == nil || update.Message.Text == "" {
-			b.logger.Error("invalid message")
 			continue
 		}
 

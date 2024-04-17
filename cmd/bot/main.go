@@ -31,13 +31,13 @@ func main() {
 		return
 	}
 
-	replacer, err := makeReplacer(cfg.Profanity)
+	replacer, err := makeProfanityReplacer(cfg.Profanity)
 	if err != nil {
 		logger.WithError(err).Error("failed to init replacer")
 		return
 	}
 
-	tgBot, err := bot.New(cfg.Bot.Token, isDebugEnabled(), replacer, logger.WithField("bot_name", "profanity_bot"))
+	tgBot, err := bot.New(cfg.Bot.Token, replacer, logger.WithField("bot_name", "profanity_bot"))
 	if err != nil {
 		logger.WithError(err).Error("configure bot")
 		return
@@ -70,14 +70,6 @@ loop:
 	logger.Info("bot stopped...")
 }
 
-func isDebugEnabled() bool {
-	if debug := os.Getenv("FB_DEBUG"); debug != "" {
-		return true
-	}
-
-	return false
-}
-
 func loadConfig() (*config.Config, error) {
 	configFile := flag.String("config", "config/config.yaml", "telegram bot config file")
 	flag.Parse()
@@ -90,7 +82,7 @@ func loadConfig() (*config.Config, error) {
 	return &cfg, nil
 }
 
-func makeReplacer(cfg config.Profanity) (bot.MessageReplacer, error) {
+func makeProfanityReplacer(cfg config.Profanity) (bot.MessageReplacer, error) {
 	words, err := config.BadWords()
 	if err != nil {
 		return nil, fmt.Errorf("get bad words: %w", err)
