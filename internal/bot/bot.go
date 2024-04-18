@@ -44,27 +44,46 @@ func (b *bot) ProcessUpdates(timeout int) {
 	var wg sync.WaitGroup
 
 	for update := range updates {
-		if update.Message == nil || update.Message.Text == "" {
-			continue
-		}
+		msg := extractTextMessage(&update)
 
 		b.logger.WithFields(logrus.Fields{
-			"chat_id": update.Message.Chat.ID,
-			"message": update.Message.Text,
+			"chat_id": msg.Chat.ID,
+			"message": msg.Text,
 		}).Debug("incoming message")
 
 		wg.Add(1)
 
-		go func(u tgbotapi.Update) {
+		go func(msg *tgbotapi.Message) {
 			defer wg.Done()
 
-			if err := b.processMessage(u.Message); err != nil {
+			if err := b.processMessage(msg); err != nil {
 				b.logger.WithError(err).Error("process message")
 			}
-		}(update)
+		}(msg)
 	}
 
 	wg.Wait()
+}
+
+func extractTextMessage(u *tgbotapi.Update) *tgbotapi.Message {
+	msg := extractMessage(u)
+	if msg != nil && msg.Text != "" {
+		return msg
+	}
+
+	return nil
+}
+
+func extractMessage(u *tgbotapi.Update) *tgbotapi.Message {
+	if u.Message != nil {
+		return u.Message
+	}
+
+	if u.EditedMessage != nil {
+		return u.EditedMessage
+	}
+
+	return nil
 }
 
 func (b *bot) processMessage(msg *tgbotapi.Message) error {
