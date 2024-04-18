@@ -45,6 +45,9 @@ func (b *bot) ProcessUpdates(timeout int) {
 
 	for update := range updates {
 		msg := extractTextMessage(&update)
+		if msg == nil {
+			continue
+		}
 
 		b.logger.WithFields(logrus.Fields{
 			"chat_id": msg.Chat.ID,
