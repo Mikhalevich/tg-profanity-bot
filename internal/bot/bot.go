@@ -3,6 +3,7 @@ package bot
 import (
 	"fmt"
 	"sync"
+	"unicode/utf8"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
@@ -90,44 +91,81 @@ func extractMessage(u *tgbotapi.Update) *tgbotapi.Message {
 }
 
 func (b *bot) processMessage(msg *tgbotapi.Message) error {
-	mangledMsg := b.replacer.ReplaceMessage(msg.Text)
+	mangledMsgText := b.replacer.ReplaceMessage(msg.Text)
 
-	if mangledMsg != msg.Text {
-		formattedMsg := formatMessage(mangledMsg, userName(msg.From))
-		return b.editMessage(msg, formattedMsg)
+	if mangledMsgText != msg.Text {
+		return b.editMessage(msg, mangledMsgText)
 	}
 
 	return nil
 }
 
-func userName(from *tgbotapi.User) string {
-	if from.UserName != "" {
-		return from.UserName
-	}
-
-	return fmt.Sprintf("%s %s", from.FirstName, from.LastName)
-}
-
-func formatMessage(msg string, fromUser string) string {
-	return fmt.Sprintf("Edited by profanity bot\nSender: %s\n\n%s", fromUser, msg)
-}
-
-func (b *bot) editMessage(originMsg *tgbotapi.Message, text string) error {
+func (b *bot) editMessage(originMsg *tgbotapi.Message, msgText string) error {
 	deletedMsg := tgbotapi.NewDeleteMessage(originMsg.Chat.ID, originMsg.MessageID)
 	//nolint:errcheck
 	// disabled due to api delete error
 	b.api.Send(deletedMsg)
 
-	newMsg := tgbotapi.NewMessage(originMsg.Chat.ID, text)
-	if originMsg.ReplyToMessage != nil {
-		newMsg.ReplyToMessageID = originMsg.ReplyToMessage.MessageID
-	}
-
-	if _, err := b.api.Send(newMsg); err != nil {
+	if _, err := b.api.Send(newMessage(originMsg, msgText)); err != nil {
 		return fmt.Errorf("send new: %w", err)
 	}
 
 	return nil
+}
+
+func newMessage(originMsg *tgbotapi.Message, msgText string) *tgbotapi.MessageConfig {
+	formattedMsgText, msgEntities := formatMessage(msgText, originMsg.From)
+
+	newMsg := tgbotapi.NewMessage(originMsg.Chat.ID, formattedMsgText)
+	newMsg.Entities = msgEntities
+
+	if originMsg.ReplyToMessage != nil {
+		newMsg.ReplyToMessageID = originMsg.ReplyToMessage.MessageID
+	}
+
+	return &newMsg
+}
+
+func formatMessage(msg string, fromUser *tgbotapi.User) (string, []tgbotapi.MessageEntity) {
+	var (
+		editedHeader       = "Edited by profanity bot\n"
+		editedHeaderOffset = 0
+		editedHeaderLen    = utf8.RuneCountInString(editedHeader)
+		senderHeader       = "Sender: "
+		senderHeaderOffset = editedHeaderOffset + editedHeaderLen
+		senderHeaderLen    = utf8.RuneCountInString(senderHeader)
+		userName           = extractUserName(fromUser)
+		userNameOffset     = senderHeaderOffset + senderHeaderLen
+		userNameLen        = utf8.RuneCountInString(userName)
+	)
+
+	return fmt.Sprintf("%s%s%s\n%s", editedHeader, senderHeader, fromUser, msg),
+		[]tgbotapi.MessageEntity{
+			{
+				Type:   "bold",
+				Offset: editedHeaderOffset,
+				Length: editedHeaderLen,
+			},
+			{
+				Type:   "bold",
+				Offset: senderHeaderOffset,
+				Length: senderHeaderLen,
+			},
+			{
+				Type:   "text_mention",
+				Offset: userNameOffset,
+				Length: userNameLen,
+				User:   fromUser,
+			},
+		}
+}
+
+func extractUserName(from *tgbotapi.User) string {
+	if from.UserName != "" {
+		return from.UserName
+	}
+
+	return fmt.Sprintf("%s %s", from.FirstName, from.LastName)
 }
 
 func (b *bot) Stop() {
