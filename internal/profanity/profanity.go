@@ -32,6 +32,10 @@ func (p *profanity) ReplaceMessage(msg string) string {
 		reducedPositions = p.reduceInnerPositions(wordsPositions)
 	)
 
+	if len(reducedPositions) == 0 {
+		return msg
+	}
+
 	return p.mangle(msg, reducedPositions)
 }
 
