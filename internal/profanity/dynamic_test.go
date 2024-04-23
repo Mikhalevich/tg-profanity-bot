@@ -138,6 +138,14 @@ func BenchmarkAhocorasickDynamicPredefined(b *testing.B) {
 	}
 }
 
+func BenchmarkAhocorasickDynamicNoReplacement(b *testing.B) {
+	p := initDynamic(b)
+
+	for i := 0; i < b.N; i++ {
+		p.ReplaceMessage("some text without bad words")
+	}
+}
+
 func BenchmarkAhocorasickDynamicSmallText(b *testing.B) {
 	p := initDynamic(b)
 

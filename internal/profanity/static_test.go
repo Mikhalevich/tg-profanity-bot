@@ -144,6 +144,14 @@ func BenchmarkAhocorasickStaticPredefined(b *testing.B) {
 	}
 }
 
+func BenchmarkAhocorasickStaticNoReplacement(b *testing.B) {
+	p := initStatic(b)
+
+	for i := 0; i < b.N; i++ {
+		p.ReplaceMessage("some text without bad words")
+	}
+}
+
 func BenchmarkAhocorasickStaticSmallText(b *testing.B) {
 	p := initStatic(b)
 
