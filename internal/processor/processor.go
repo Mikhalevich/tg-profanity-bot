@@ -18,17 +18,3 @@ func New(replacer TextReplacer) *processor {
 		replacer: replacer,
 	}
 }
-
-func (p *processor) ProcessMessage(msg string, rsp ResponseAction) error {
-	mangledMsg := p.replacer.Replace(msg)
-
-	if mangledMsg != msg {
-		return rsp.Edit(mangledMsg)
-	}
-
-	return nil
-}
-
-func (p *processor) ProcessCommand(cmd string, args string, rsp ResponseAction) error {
-	return nil
-}
