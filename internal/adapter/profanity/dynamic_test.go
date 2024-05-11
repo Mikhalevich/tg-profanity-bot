@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/matcher"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/replacer"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/profanity/matcher"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/profanity/replacer"
 )
 
 type ProfanityDynamicSuit struct {
@@ -73,7 +73,7 @@ func (s *ProfanityDynamicSuit) TestAhocorasickDynamic() {
 	)
 
 	for _, tc := range tests {
-		actual := s.p.ReplaceMessage(tc.Msg)
+		actual := s.p.Replace(tc.Msg)
 		s.Require().EqualValues(tc.ExpectedMsg, actual)
 	}
 }
@@ -133,7 +133,7 @@ func BenchmarkAhocorasickDynamicPredefined(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		for _, tc := range tests {
-			p.ReplaceMessage(tc.Msg)
+			p.Replace(tc.Msg)
 		}
 	}
 }
@@ -142,7 +142,7 @@ func BenchmarkAhocorasickDynamicNoReplacement(b *testing.B) {
 	p := initDynamic(b)
 
 	for i := 0; i < b.N; i++ {
-		p.ReplaceMessage("some text without bad words")
+		p.Replace("some text without bad words")
 	}
 }
 
@@ -150,7 +150,7 @@ func BenchmarkAhocorasickDynamicSmallText(b *testing.B) {
 	p := initDynamic(b)
 
 	for i := 0; i < b.N; i++ {
-		p.ReplaceMessage("some dildo small ass test cock case erotic")
+		p.Replace("some dildo small ass test cock case erotic")
 	}
 }
 
@@ -158,7 +158,7 @@ func BenchmarkAhocorasickDynamicMediumText(b *testing.B) {
 	p := initDynamic(b)
 
 	for i := 0; i < b.N; i++ {
-		p.ReplaceMessage(strings.Repeat("some dildo small ass test cock case erotic", 30))
+		p.Replace(strings.Repeat("some dildo small ass test cock case erotic", 30))
 	}
 }
 
@@ -166,6 +166,6 @@ func BenchmarkAhocorasickDynamicLargeText(b *testing.B) {
 	p := initDynamic(b)
 
 	for i := 0; i < b.N; i++ {
-		p.ReplaceMessage(strings.Repeat("some dildo small ass test cock case erotic", 30))
+		p.Replace(strings.Repeat("some dildo small ass test cock case erotic", 30))
 	}
 }

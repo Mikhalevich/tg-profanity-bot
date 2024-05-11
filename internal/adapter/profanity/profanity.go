@@ -3,7 +3,7 @@ package profanity
 import (
 	"strings"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/profanity/internal/position"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/internal/position"
 )
 
 type Matcher interface {
@@ -26,7 +26,7 @@ func New(matcher Matcher, replacer Replacer) *profanity {
 	}
 }
 
-func (p *profanity) ReplaceMessage(msg string) string {
+func (p *profanity) Replace(msg string) string {
 	var (
 		wordsPositions   = p.wordsPositions(strings.ToLower(msg))
 		reducedPositions = p.reduceInnerPositions(wordsPositions)

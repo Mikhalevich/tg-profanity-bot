@@ -11,11 +11,12 @@ import (
 	"github.com/jinzhu/configor"
 	"github.com/sirupsen/logrus"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/bot"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/bot"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/matcher"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/replacer"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/profanity"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/profanity/matcher"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/profanity/replacer"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor"
 )
 
 func main() {
@@ -37,7 +38,9 @@ func main() {
 		return
 	}
 
-	tgBot, err := bot.New(cfg.Bot.Token, replacer, logger.WithField("bot_name", "profanity_bot"))
+	msgProcessor := processor.New(replacer)
+
+	tgBot, err := bot.New(cfg.Bot.Token, msgProcessor, logger.WithField("bot_name", "profanity_bot"))
 	if err != nil {
 		logger.WithError(err).Error("configure bot")
 		return
@@ -82,7 +85,7 @@ func loadConfig() (*config.Config, error) {
 	return &cfg, nil
 }
 
-func makeProfanityReplacer(cfg config.Profanity) (bot.MessageReplacer, error) {
+func makeProfanityReplacer(cfg config.Profanity) (processor.TextReplacer, error) {
 	words, err := config.BadWords()
 	if err != nil {
 		return nil, fmt.Errorf("get bad words: %w", err)
