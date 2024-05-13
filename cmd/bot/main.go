@@ -20,15 +20,15 @@ import (
 )
 
 func main() {
-	logger := logrus.New()
-	logger.SetOutput(os.Stdout)
-	logger.SetFormatter(&logrus.TextFormatter{
-		FullTimestamp: true,
-	})
-
 	cfg, err := loadConfig()
 	if err != nil {
-		logger.WithError(err).Error("failed to load config")
+		logrus.WithError(err).Error("failed to load config")
+		return
+	}
+
+	logger, err := setupLogger(cfg.LogLevel)
+	if err != nil {
+		logger.WithError(err).Error("failed to setup logger")
 		return
 	}
 
@@ -83,6 +83,22 @@ func loadConfig() (*config.Config, error) {
 	}
 
 	return &cfg, nil
+}
+
+func setupLogger(lvl string) (*logrus.Logger, error) {
+	level, err := logrus.ParseLevel(lvl)
+	if err != nil {
+		return nil, fmt.Errorf("parse log level: %w", err)
+	}
+
+	logger := logrus.New()
+	logger.SetLevel(level)
+	logger.SetOutput(os.Stdout)
+	logger.SetFormatter(&logrus.TextFormatter{
+		FullTimestamp: true,
+	})
+
+	return logger, nil
 }
 
 func makeProfanityReplacer(cfg config.Profanity) (processor.TextReplacer, error) {

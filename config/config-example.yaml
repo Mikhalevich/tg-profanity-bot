@@ -1,3 +1,4 @@
+log_level: "info"
 bot:
   token: "tg-bot-token"
   update_timeout_seconds: 5

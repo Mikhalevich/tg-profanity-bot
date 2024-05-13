@@ -1,6 +1,7 @@
 package config
 
 type Config struct {
+	LogLevel  string    `yaml:"log_level" required:"true"`
 	Bot       Bot       `yaml:"bot" required:"true"`
 	Profanity Profanity `yaml:"profanity" required:"true"`
 }
