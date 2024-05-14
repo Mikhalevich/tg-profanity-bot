@@ -6,13 +6,10 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
-
-	"github.com/Mikhalevich/tg-profanity-bot/internal/processor"
 )
 
 type MessageProcessor interface {
-	ProcessMessage(msg string, rsp processor.ResponseAction) error
-	ProcessCommand(cmd string, args string, rsp processor.ResponseAction) error
+	ProcessMessage(msg *tgbotapi.Message) error
 }
 
 type bot struct {
@@ -93,7 +90,7 @@ func extractMessage(u *tgbotapi.Update) *tgbotapi.Message {
 }
 
 func (b *bot) processMessage(msg *tgbotapi.Message) error {
-	if err := b.processor.ProcessMessage(msg.Text, newResponseAction(msg, b.api)); err != nil {
+	if err := b.processor.ProcessMessage(msg); err != nil {
 		return fmt.Errorf("process message: %w", err)
 	}
 

@@ -12,6 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/bot"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/msgsender"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/matcher"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/replacer"
@@ -38,7 +39,13 @@ func main() {
 		return
 	}
 
-	msgProcessor := processor.New(replacer)
+	msgSender, err := msgsender.New(cfg.Bot.Token)
+	if err != nil {
+		logger.WithError(err).Error("failed to init msg sender")
+		return
+	}
+
+	msgProcessor := processor.New(replacer, msgSender)
 
 	tgBot, err := bot.New(cfg.Bot.Token, msgProcessor, logger.WithField("bot_name", "profanity_bot"))
 	if err != nil {

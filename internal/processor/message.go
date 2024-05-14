@@ -1,15 +1,19 @@
 package processor
 
-import "fmt"
+import (
+	"fmt"
 
-func (p *processor) ProcessMessage(msg string, rsp ResponseAction) error {
-	mangledMsg := p.replacer.Replace(msg)
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+)
 
-	if mangledMsg == msg {
+func (p *processor) ProcessMessage(msg *tgbotapi.Message) error {
+	mangledMsg := p.replacer.Replace(msg.Text)
+
+	if mangledMsg == msg.Text {
 		return nil
 	}
 
-	if err := rsp.Edit(mangledMsg); err != nil {
+	if err := p.msgSender.Edit(msg, mangledMsg); err != nil {
 		return fmt.Errorf("msg edit: %w", err)
 	}
 
