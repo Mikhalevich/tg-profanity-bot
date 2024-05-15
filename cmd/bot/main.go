@@ -11,11 +11,11 @@ import (
 	"github.com/jinzhu/configor"
 	"github.com/sirupsen/logrus"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/bot"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/msgsender"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/matcher"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/replacer"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/bot"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor"
 )
