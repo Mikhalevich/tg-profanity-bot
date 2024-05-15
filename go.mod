@@ -6,6 +6,7 @@ require (
 	github.com/cloudflare/ahocorasick v0.0.0-20210425175752-730270c3e184
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/jinzhu/configor v1.2.2
+	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.7.0
 )
