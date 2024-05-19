@@ -52,14 +52,10 @@ func MakeRabbitAMQPChannel(url string) (*amqp.Channel, func(), error) {
 		return nil, nil, fmt.Errorf("ampq dial: %w", err)
 	}
 
-	defer conn.Close()
-
 	ch, err := conn.Channel()
 	if err != nil {
 		return nil, nil, fmt.Errorf("get channel from connection: %w", err)
 	}
-
-	defer ch.Close()
 
 	return ch, func() {
 		ch.Close()
