@@ -22,7 +22,7 @@ bench:
 
 .PHONY: run
 run:
-	$(BIN_PATH)/bot -config=./config/config.yaml
+	$(BIN_PATH)/bot -config=./config/config-bot.yaml
 
 .PHONY: vendor
 vendor:

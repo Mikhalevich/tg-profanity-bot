@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	var cfg config.Config
+	var cfg config.Bot
 	if err := app.LoadConfig(&cfg); err != nil {
 		logrus.WithError(err).Error("failed to load config")
 		return
@@ -26,13 +26,13 @@ func main() {
 		return
 	}
 
-	msgProcessor, err := app.MakeMsgProcessor(cfg.Profanity, cfg.Bot.Token)
+	msgProcessor, err := app.MakeMsgProcessor(cfg.Profanity, cfg.Updates.Token)
 	if err != nil {
-		logger.WithError(err).Error("failed to make msg processor")
+		logger.WithError(err).Error("failed to init msg processor")
 		return
 	}
 
-	tgBot, err := bot.New(cfg.Bot.Token, msgProcessor, logger.WithField("bot_name", "profanity_bot"))
+	tgBot, err := bot.New(cfg.Updates.Token, msgProcessor, logger.WithField("bot_name", "profanity_bot"))
 	if err != nil {
 		logger.WithError(err).Error("configure bot")
 		return
@@ -44,7 +44,7 @@ func main() {
 		defer cancel()
 
 		logger.Info("bot running...")
-		tgBot.ProcessUpdates(cfg.Bot.UpdateTimeoutSeconds)
+		tgBot.ProcessUpdates(cfg.Updates.UpdateTimeoutSeconds)
 	}()
 
 	terminate := make(chan os.Signal, 1)
