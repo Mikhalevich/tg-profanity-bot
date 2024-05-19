@@ -10,6 +10,7 @@ all: build
 .PHONY: build
 build:
 	go build -mod=vendor -o $(BIN_PATH)/bot ./cmd/bot/main.go
+	go build -mod=vendor -o $(BIN_PATH)/consumer ./cmd/consumer/main.go
 
 .PHONY: test
 test:
