@@ -6,14 +6,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/msgsender"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/messagequeue/rabbit/consumer"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/processor"
 )
 
 func main() {
@@ -29,35 +26,19 @@ func main() {
 		return
 	}
 
-	replacer, err := app.MakeProfanityReplacer(cfg.Profanity)
+	msgProcessor, err := app.MakeMsgProcessor(cfg.Profanity, cfg.BotToken)
 	if err != nil {
-		logger.WithError(err).Error("failed to init replacer")
+		logger.WithError(err).Error("init msg processor")
 		return
 	}
 
-	msgSender, err := msgsender.New(cfg.BotToken)
+	ch, cleanup, err := app.MakeRabbitAMQPChannel(cfg.Rabbit.URL)
 	if err != nil {
-		logger.WithError(err).Error("failed to init msg sender")
+		logger.WithError(err).Error("failed to init rabbitmq channel")
 		return
 	}
 
-	msgProcessor := processor.New(replacer, msgSender)
-
-	conn, err := amqp.Dial(cfg.Rabbit.URL)
-	if err != nil {
-		logger.WithError(err).Error("failed to init rabbit mq connection")
-		return
-	}
-
-	defer conn.Close()
-
-	ch, err := conn.Channel()
-	if err != nil {
-		logger.WithError(err).Error("failed to init rabbit mq channel")
-		return
-	}
-
-	defer ch.Close()
+	defer cleanup()
 
 	ctx, cancel := context.WithCancel(context.Background())
 

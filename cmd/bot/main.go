@@ -8,11 +8,9 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/msgsender"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/bot"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/processor"
 )
 
 func main() {
@@ -28,19 +26,11 @@ func main() {
 		return
 	}
 
-	replacer, err := app.MakeProfanityReplacer(cfg.Profanity)
+	msgProcessor, err := app.MakeMsgProcessor(cfg.Profanity, cfg.Bot.Token)
 	if err != nil {
-		logger.WithError(err).Error("failed to init replacer")
+		logger.WithError(err).Error("failed to make msg processor")
 		return
 	}
-
-	msgSender, err := msgsender.New(cfg.Bot.Token)
-	if err != nil {
-		logger.WithError(err).Error("failed to init msg sender")
-		return
-	}
-
-	msgProcessor := processor.New(replacer, msgSender)
 
 	tgBot, err := bot.New(cfg.Bot.Token, msgProcessor, logger.WithField("bot_name", "profanity_bot"))
 	if err != nil {
