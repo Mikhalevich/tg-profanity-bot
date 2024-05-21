@@ -42,7 +42,7 @@ func (c *consumer) Consume(ctx context.Context, workersCount int, processor Mess
 		ctx,
 		c.queueName,
 		"",
-		false,
+		true,
 		false,
 		false,
 		false,

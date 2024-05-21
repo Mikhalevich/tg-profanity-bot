@@ -26,7 +26,7 @@ run:
 
 .PHONY: componse-async-up
 componse-async-up:
-	docker-compose -f ./script/docker/docker-compose.yml up
+	docker-compose -f ./script/docker/docker-compose.yml up --build
 
 .PHONY: vendor
 vendor:
