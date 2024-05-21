@@ -1,0 +1,35 @@
+version: "3"
+services:
+  bot:
+    build:
+      context: ../../
+      dockerfile: script/docker/bot.Dockerfile
+    depends_on:
+      rabbit:
+        condition: service_healthy
+    networks:
+      - bot-net
+  worker:
+    build:
+      context: ../../
+      dockerfile: script/docker/consumer.Dockerfile
+    depends_on:
+      rabbit:
+        condition: service_healthy
+    networks:
+      - bot-net
+  rabbit:
+    image: rabbitmq:3.13-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 5s
+      timeout: 30s
+      retries: 3
+    networks:
+      - bot-net
+networks:
+  bot-net:
+    driver: bridge

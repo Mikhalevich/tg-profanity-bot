@@ -1,4 +1,4 @@
-package bot
+package msgsender
 
 import (
 	"fmt"
@@ -7,29 +7,28 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-type responseAction struct {
-	originMsg *tgbotapi.Message
-	api       *tgbotapi.BotAPI
+type msgsender struct {
+	api *tgbotapi.BotAPI
 }
 
-func newResponseAction(originMsg *tgbotapi.Message, api *tgbotapi.BotAPI) *responseAction {
-	return &responseAction{
-		originMsg: originMsg,
-		api:       api,
+func New(token string) (*msgsender, error) {
+	api, err := tgbotapi.NewBotAPI(token)
+	if err != nil {
+		return nil, fmt.Errorf("create bot api: %w", err)
 	}
+
+	return &msgsender{
+		api: api,
+	}, nil
 }
 
-func (ra *responseAction) Send(msg string) error {
-	return nil
-}
-
-func (ra *responseAction) Edit(msg string) error {
-	deletedMsg := tgbotapi.NewDeleteMessage(ra.originMsg.Chat.ID, ra.originMsg.MessageID)
+func (s *msgsender) Edit(originMsg *tgbotapi.Message, msg string) error {
+	deletedMsg := tgbotapi.NewDeleteMessage(originMsg.Chat.ID, originMsg.MessageID)
 	//nolint:errcheck
 	// disabled due to api delete error
-	ra.api.Send(deletedMsg)
+	s.api.Send(deletedMsg)
 
-	if _, err := ra.api.Send(newMessage(ra.originMsg, msg)); err != nil {
+	if _, err := s.api.Send(newMessage(originMsg, msg)); err != nil {
 		return fmt.Errorf("send new: %w", err)
 	}
 

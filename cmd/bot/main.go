@@ -2,45 +2,41 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/jinzhu/configor"
 	"github.com/sirupsen/logrus"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/bot"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/matcher"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/replacer"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/app"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/bot"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/processor"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/messagequeue/rabbit/publisher"
 )
 
 func main() {
-	cfg, err := loadConfig()
-	if err != nil {
+	var cfg config.Bot
+	if err := app.LoadConfig(&cfg); err != nil {
 		logrus.WithError(err).Error("failed to load config")
 		return
 	}
 
-	logger, err := setupLogger(cfg.LogLevel)
+	logger, err := app.SetupLogger(cfg.LogLevel)
 	if err != nil {
 		logger.WithError(err).Error("failed to setup logger")
 		return
 	}
 
-	replacer, err := makeProfanityReplacer(cfg.Profanity)
+	msgProcessor, cleanup, err := makeProcessor(cfg.Rabbit, cfg.Profanity, cfg.Updates.Token)
 	if err != nil {
-		logger.WithError(err).Error("failed to init replacer")
+		logger.WithError(err).Error("failed to init msg processor")
 		return
 	}
 
-	msgProcessor := processor.New(replacer)
+	defer cleanup()
 
-	tgBot, err := bot.New(cfg.Bot.Token, msgProcessor, logger.WithField("bot_name", "profanity_bot"))
+	tgBot, err := bot.New(cfg.Updates.Token, msgProcessor, logger.WithField("bot_name", "profanity_bot"))
 	if err != nil {
 		logger.WithError(err).Error("configure bot")
 		return
@@ -52,7 +48,7 @@ func main() {
 		defer cancel()
 
 		logger.Info("bot running...")
-		tgBot.ProcessUpdates(cfg.Bot.UpdateTimeoutSeconds)
+		tgBot.ProcessUpdates(cfg.Updates.UpdateTimeoutSeconds)
 	}()
 
 	terminate := make(chan os.Signal, 1)
@@ -73,43 +69,39 @@ loop:
 	logger.Info("bot stopped...")
 }
 
-func loadConfig() (*config.Config, error) {
-	configFile := flag.String("config", "config/config.yaml", "telegram bot config file")
-	flag.Parse()
+func makeProcessor(
+	rabbitCfg config.RabbitMQProducer,
+	profanityCfg config.Profanity,
+	botToken string,
+) (bot.MessageProcessor, func(), error) {
+	if rabbitCfg.URL != "" {
+		msgPublisher, cleanup, err := makeRabbitPublisher(rabbitCfg)
+		if err != nil {
+			return nil, nil, fmt.Errorf("rabbit publisher: %w", err)
+		}
 
-	var cfg config.Config
-	if err := configor.Load(&cfg, *configFile); err != nil {
-		return nil, fmt.Errorf("load config: %w", err)
+		return msgPublisher, cleanup, nil
 	}
 
-	return &cfg, nil
+	msgProcessor, err := app.MakeMsgProcessor(profanityCfg, botToken)
+	if err != nil {
+		return nil, nil, fmt.Errorf("msg processor: %w", err)
+	}
+
+	return msgProcessor, func() {
+	}, nil
 }
 
-func setupLogger(lvl string) (*logrus.Logger, error) {
-	level, err := logrus.ParseLevel(lvl)
+func makeRabbitPublisher(rabbitCfg config.RabbitMQProducer) (bot.MessageProcessor, func(), error) {
+	ch, cleanup, err := app.MakeRabbitAMQPChannel(rabbitCfg.URL)
 	if err != nil {
-		return nil, fmt.Errorf("parse log level: %w", err)
+		return nil, nil, fmt.Errorf("rabbit channel: %w", err)
 	}
 
-	logger := logrus.New()
-	logger.SetLevel(level)
-	logger.SetOutput(os.Stdout)
-	logger.SetFormatter(&logrus.TextFormatter{
-		FullTimestamp: true,
-	})
-
-	return logger, nil
-}
-
-func makeProfanityReplacer(cfg config.Profanity) (processor.TextReplacer, error) {
-	words, err := config.BadWords()
+	msgPublisher, err := publisher.New(ch, rabbitCfg.MsgQueue)
 	if err != nil {
-		return nil, fmt.Errorf("get bad words: %w", err)
+		return nil, nil, fmt.Errorf("rabbit publisher: %w", err)
 	}
 
-	if cfg.Dynamic != "" {
-		return profanity.New(matcher.NewAhocorasick(words), replacer.NewDynamic(cfg.Dynamic)), nil
-	}
-
-	return profanity.New(matcher.NewAhocorasick(words), replacer.NewStatic(cfg.Static)), nil
+	return msgPublisher, cleanup, nil
 }

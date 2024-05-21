@@ -10,6 +10,7 @@ all: build
 .PHONY: build
 build:
 	go build -mod=vendor -o $(BIN_PATH)/bot ./cmd/bot/main.go
+	go build -mod=vendor -o $(BIN_PATH)/consumer ./cmd/consumer/main.go
 
 .PHONY: test
 test:
@@ -19,9 +20,13 @@ test:
 bench:
 	go test -bench=. ./...
 
-.PHONY: run
-run:
-	$(BIN_PATH)/bot -config=./config/config.yaml
+.PHONY: run-bot
+run-bot:
+	$(BIN_PATH)/bot -config=./config/config-bot.yaml
+
+.PHONY: componse-async-up
+componse-async-up:
+	docker-compose -f ./script/docker/docker-compose.yml up --build
 
 .PHONY: vendor
 vendor:
