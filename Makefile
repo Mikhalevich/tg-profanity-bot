@@ -24,6 +24,10 @@ bench:
 run:
 	$(BIN_PATH)/bot -config=./config/config-bot.yaml
 
+.PHONY: componse-async-up
+componse-async-up:
+	docker-compose -f ./script/docker/docker-compose.yml up
+
 .PHONY: vendor
 vendor:
 	go mod tidy
