@@ -26,8 +26,8 @@ func New(ch *amqp.Channel, queueName string) (*publisher, error) {
 	}, nil
 }
 
-func (p *publisher) ProcessMessage(msg *tgbotapi.Message) error {
-	if err := p.publishJSON(context.Background(), msg); err != nil {
+func (p *publisher) ProcessMessage(ctx context.Context, msg *tgbotapi.Message) error {
+	if err := p.publishJSON(ctx, msg); err != nil {
 		return fmt.Errorf("publish json: %w", err)
 	}
 

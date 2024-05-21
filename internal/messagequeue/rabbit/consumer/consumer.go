@@ -12,7 +12,7 @@ import (
 )
 
 type MessageProcessor interface {
-	ProcessMessage(msg *tgbotapi.Message) error
+	ProcessMessage(ctx context.Context, msg *tgbotapi.Message) error
 }
 
 type consumer struct {
@@ -54,7 +54,7 @@ func (c *consumer) Consume(ctx context.Context, workersCount int, processor Mess
 	}
 
 	c.wg.Add(workersCount)
-	c.runWorkers(workersCount, processor)
+	c.runWorkers(ctx, workersCount, processor)
 
 	for u := range updates {
 		c.workerChan <- u
@@ -71,13 +71,13 @@ func (c *consumer) Consume(ctx context.Context, workersCount int, processor Mess
 	return nil
 }
 
-func (c *consumer) runWorkers(count int, processor MessageProcessor) {
+func (c *consumer) runWorkers(ctx context.Context, count int, processor MessageProcessor) {
 	for range count {
 		go func() {
 			defer c.wg.Done()
 
 			for d := range c.workerChan {
-				if err := c.processUpdate(d, processor); err != nil {
+				if err := c.processUpdate(ctx, d, processor); err != nil {
 					c.logger.WithError(err).Error("process update")
 					continue
 				}
@@ -86,13 +86,13 @@ func (c *consumer) runWorkers(count int, processor MessageProcessor) {
 	}
 }
 
-func (c *consumer) processUpdate(d amqp.Delivery, processor MessageProcessor) error {
+func (c *consumer) processUpdate(ctx context.Context, d amqp.Delivery, processor MessageProcessor) error {
 	var msg *tgbotapi.Message
 	if err := json.Unmarshal(d.Body, &msg); err != nil {
 		return fmt.Errorf("json unmarshal: %w", err)
 	}
 
-	if err := processor.ProcessMessage(msg); err != nil {
+	if err := processor.ProcessMessage(ctx, msg); err != nil {
 		return fmt.Errorf("process message: %w", err)
 	}
 

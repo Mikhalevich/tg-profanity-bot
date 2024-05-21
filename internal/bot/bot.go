@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -9,7 +10,7 @@ import (
 )
 
 type MessageProcessor interface {
-	ProcessMessage(msg *tgbotapi.Message) error
+	ProcessMessage(ctx context.Context, msg *tgbotapi.Message) error
 }
 
 type bot struct {
@@ -59,7 +60,7 @@ func (b *bot) ProcessUpdates(timeout int) {
 		go func(msg *tgbotapi.Message) {
 			defer wg.Done()
 
-			if err := b.processMessage(msg); err != nil {
+			if err := b.processMessage(context.Background(), msg); err != nil {
 				b.logger.WithError(err).Error("process message")
 			}
 		}(msg)
@@ -89,8 +90,8 @@ func extractMessage(u *tgbotapi.Update) *tgbotapi.Message {
 	return nil
 }
 
-func (b *bot) processMessage(msg *tgbotapi.Message) error {
-	if err := b.processor.ProcessMessage(msg); err != nil {
+func (b *bot) processMessage(ctx context.Context, msg *tgbotapi.Message) error {
+	if err := b.processor.ProcessMessage(ctx, msg); err != nil {
 		return fmt.Errorf("process message: %w", err)
 	}
 

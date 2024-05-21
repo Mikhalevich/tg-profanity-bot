@@ -1,12 +1,13 @@
 package processor
 
 import (
+	"context"
 	"fmt"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func (p *processor) ProcessMessage(msg *tgbotapi.Message) error {
+func (p *processor) ProcessMessage(ctx context.Context, msg *tgbotapi.Message) error {
 	mangledMsg := p.replacer.Replace(msg.Text)
 
 	if mangledMsg == msg.Text {
