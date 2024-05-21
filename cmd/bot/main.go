@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,6 +12,7 @@ import (
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/bot"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/messagequeue/rabbit/publisher"
 )
 
 func main() {
@@ -26,11 +28,13 @@ func main() {
 		return
 	}
 
-	msgProcessor, err := app.MakeMsgProcessor(cfg.Profanity, cfg.Updates.Token)
+	msgProcessor, cleanup, err := makeProcessor(cfg.Rabbit, cfg.Profanity, cfg.Updates.Token)
 	if err != nil {
 		logger.WithError(err).Error("failed to init msg processor")
 		return
 	}
+
+	defer cleanup()
 
 	tgBot, err := bot.New(cfg.Updates.Token, msgProcessor, logger.WithField("bot_name", "profanity_bot"))
 	if err != nil {
@@ -63,4 +67,41 @@ loop:
 	}
 
 	logger.Info("bot stopped...")
+}
+
+func makeProcessor(
+	rabbitCfg config.RabbitMQProducer,
+	profanityCfg config.Profanity,
+	botToken string,
+) (bot.MessageProcessor, func(), error) {
+	if rabbitCfg.URL != "" {
+		msgPublisher, cleanup, err := makeRabbitPublisher(rabbitCfg)
+		if err != nil {
+			return nil, nil, fmt.Errorf("rabbit publisher: %w", err)
+		}
+
+		return msgPublisher, cleanup, nil
+	}
+
+	msgProcessor, err := app.MakeMsgProcessor(profanityCfg, botToken)
+	if err != nil {
+		return nil, nil, fmt.Errorf("msg processor: %w", err)
+	}
+
+	return msgProcessor, func() {
+	}, nil
+}
+
+func makeRabbitPublisher(rabbitCfg config.RabbitMQProducer) (bot.MessageProcessor, func(), error) {
+	ch, cleanup, err := app.MakeRabbitAMQPChannel(rabbitCfg.URL)
+	if err != nil {
+		return nil, nil, fmt.Errorf("rabbit channel: %w", err)
+	}
+
+	msgPublisher, err := publisher.New(ch, rabbitCfg.MsgQueue)
+	if err != nil {
+		return nil, nil, fmt.Errorf("rabbit publisher: %w", err)
+	}
+
+	return msgPublisher, cleanup, nil
 }
