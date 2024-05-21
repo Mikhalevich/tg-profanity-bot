@@ -20,8 +20,8 @@ test:
 bench:
 	go test -bench=. ./...
 
-.PHONY: run
-run:
+.PHONY: run-bot
+run-bot:
 	$(BIN_PATH)/bot -config=./config/config-bot.yaml
 
 .PHONY: componse-async-up
