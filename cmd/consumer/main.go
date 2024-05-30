@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"os"
 	"os/signal"
 	"syscall"
 
@@ -40,22 +39,14 @@ func main() {
 
 	defer cleanup()
 
-	ctx, cancel := context.WithCancel(context.Background())
-
 	c, err := consumer.New(ch, cfg.Rabbit.MsgQueue, logger.WithField("bot_name", "bot_msg_worker"))
 	if err != nil {
 		logger.WithError(err).Error("failed to init message consumer")
 		return
 	}
 
-	go func() {
-		defer cancel()
-
-		terminate := make(chan os.Signal, 1)
-		signal.Notify(terminate, syscall.SIGINT, syscall.SIGTERM)
-
-		<-terminate
-	}()
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
 
 	logger.Info("consumer running...")
 
