@@ -9,7 +9,7 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
 )
 
 var (
@@ -36,15 +36,22 @@ func SetupTracer(
 		return fmt.Errorf("creating exporter: %w", err)
 	}
 
+	res, err := resource.Merge(
+		resource.Default(),
+		resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceName(serviceName),
+			semconv.ServiceVersion(serviceVersion),
+		),
+	)
+
+	if err != nil {
+		return fmt.Errorf("merge resource: %w", err)
+	}
+
 	tracerprovider := trace.NewTracerProvider(
 		trace.WithBatcher(exporter),
-		trace.WithResource(
-			resource.NewWithAttributes(
-				semconv.SchemaURL,
-				semconv.ServiceName(serviceName),
-				semconv.ServiceVersion(serviceVersion),
-			),
-		),
+		trace.WithResource(res),
 	)
 
 	otel.SetTracerProvider(tracerprovider)
