@@ -24,9 +24,13 @@ bench:
 run-bot:
 	$(BIN_PATH)/bot -config=./config/config-bot.yaml
 
-.PHONY: componse-async-up
-componse-async-up:
-	docker-compose -f ./script/docker/docker-compose.yml up --build
+.PHONY: compose-sync-up
+compose-sync-up:
+	docker-compose -f ./script/docker/docker-compose-sync.yml up --build
+
+.PHONY: compose-async-up
+compose-async-up:
+	docker-compose -f ./script/docker/docker-compose-async.yml up --build
 
 .PHONY: vendor
 vendor:

@@ -1,4 +1,7 @@
 log_level: "info"
+tracing:
+  endpoint: "jaeger:4318"
+  service_name: "tg-bot"
 bot:
   token: "tg-bot-token"
   update_timeout_seconds: 5
