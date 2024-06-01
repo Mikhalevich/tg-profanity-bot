@@ -1,15 +1,17 @@
 package processor
 
 import (
+	"context"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type TextReplacer interface {
-	Replace(msg string) string
+	Replace(ctx context.Context, msg string) string
 }
 
 type MsgSender interface {
-	Edit(originMsg *tgbotapi.Message, msg string) error
+	Edit(ctx context.Context, originMsg *tgbotapi.Message, msg string) error
 }
 
 type processor struct {

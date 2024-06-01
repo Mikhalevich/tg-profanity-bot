@@ -1,6 +1,7 @@
 package profanity
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -73,7 +74,7 @@ func (s *ProfanityDynamicSuit) TestAhocorasickDynamic() {
 	)
 
 	for _, tc := range tests {
-		actual := s.p.Replace(tc.Msg)
+		actual := s.p.Replace(context.Background(), tc.Msg)
 		s.Require().EqualValues(tc.ExpectedMsg, actual)
 	}
 }
@@ -133,7 +134,7 @@ func BenchmarkAhocorasickDynamicPredefined(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		for _, tc := range tests {
-			p.Replace(tc.Msg)
+			p.Replace(context.Background(), tc.Msg)
 		}
 	}
 }
@@ -142,7 +143,7 @@ func BenchmarkAhocorasickDynamicNoReplacement(b *testing.B) {
 	p := initDynamic(b)
 
 	for i := 0; i < b.N; i++ {
-		p.Replace("some text without bad words")
+		p.Replace(context.Background(), "some text without bad words")
 	}
 }
 
@@ -150,7 +151,7 @@ func BenchmarkAhocorasickDynamicSmallText(b *testing.B) {
 	p := initDynamic(b)
 
 	for i := 0; i < b.N; i++ {
-		p.Replace("some dildo small ass test cock case erotic")
+		p.Replace(context.Background(), "some dildo small ass test cock case erotic")
 	}
 }
 
@@ -158,7 +159,7 @@ func BenchmarkAhocorasickDynamicMediumText(b *testing.B) {
 	p := initDynamic(b)
 
 	for i := 0; i < b.N; i++ {
-		p.Replace(strings.Repeat("some dildo small ass test cock case erotic", 30))
+		p.Replace(context.Background(), strings.Repeat("some dildo small ass test cock case erotic", 30))
 	}
 }
 
@@ -166,6 +167,6 @@ func BenchmarkAhocorasickDynamicLargeText(b *testing.B) {
 	p := initDynamic(b)
 
 	for i := 0; i < b.N; i++ {
-		p.Replace(strings.Repeat("some dildo small ass test cock case erotic", 30))
+		p.Replace(context.Background(), strings.Repeat("some dildo small ass test cock case erotic", 30))
 	}
 }

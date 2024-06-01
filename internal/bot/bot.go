@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
 )
@@ -92,14 +91,8 @@ func extractMessage(u *tgbotapi.Update) *tgbotapi.Message {
 }
 
 func (b *bot) processMessage(ctx context.Context, msg *tgbotapi.Message) error {
-	if err := tracing.TraceFn(ctx, "process message", func(ctx context.Context) error {
-		if err := b.processor.ProcessMessage(ctx, msg); err != nil {
-			return fmt.Errorf("process message: %w", err)
-		}
-
-		return nil
-	}); err != nil {
-		return fmt.Errorf("trace fn: %w", err)
+	if err := b.processor.ProcessMessage(ctx, msg); err != nil {
+		return fmt.Errorf("process message: %w", err)
 	}
 
 	return nil

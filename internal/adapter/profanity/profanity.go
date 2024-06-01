@@ -1,9 +1,11 @@
 package profanity
 
 import (
+	"context"
 	"strings"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/internal/position"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 )
 
 type Matcher interface {
@@ -26,20 +28,26 @@ func New(matcher Matcher, replacer Replacer) *profanity {
 	}
 }
 
-func (p *profanity) Replace(msg string) string {
+func (p *profanity) Replace(ctx context.Context, msg string) string {
+	ctx, span := tracing.Trace(ctx)
+	defer span.End()
+
 	var (
-		wordsPositions   = p.wordsPositions(strings.ToLower(msg))
-		reducedPositions = p.reduceInnerPositions(wordsPositions)
+		wordsPositions   = p.wordsPositions(ctx, strings.ToLower(msg))
+		reducedPositions = p.reduceInnerPositions(ctx, wordsPositions)
 	)
 
 	if len(reducedPositions) == 0 {
 		return msg
 	}
 
-	return p.mangle(msg, reducedPositions)
+	return p.mangle(ctx, msg, reducedPositions)
 }
 
-func (p *profanity) wordsPositions(msg string) *position.SortedPositions {
+func (p *profanity) wordsPositions(ctx context.Context, msg string) *position.SortedPositions {
+	_, span := tracing.Trace(ctx)
+	defer span.End()
+
 	var (
 		msgLen       = len(msg)
 		foundedWords = p.matcher.Match([]byte(msg))
@@ -71,7 +79,10 @@ func (p *profanity) wordsPositions(msg string) *position.SortedPositions {
 	return positions
 }
 
-func (p *profanity) reduceInnerPositions(wordsPositions *position.SortedPositions) []int {
+func (p *profanity) reduceInnerPositions(ctx context.Context, wordsPositions *position.SortedPositions) []int {
+	_, span := tracing.Trace(ctx)
+	defer span.End()
+
 	var (
 		reducedPositions []int
 		opened           = 0
@@ -97,7 +108,10 @@ func (p *profanity) reduceInnerPositions(wordsPositions *position.SortedPosition
 	return reducedPositions
 }
 
-func (p *profanity) mangle(msg string, positions []int) string {
+func (p *profanity) mangle(ctx context.Context, msg string, positions []int) string {
+	_, span := tracing.Trace(ctx)
+	defer span.End()
+
 	var (
 		builder   = strings.Builder{}
 		lastIndex = 0

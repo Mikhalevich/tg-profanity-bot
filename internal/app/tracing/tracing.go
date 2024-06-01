@@ -3,13 +3,15 @@ package tracing
 import (
 	"context"
 	"fmt"
+	"runtime"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/sdk/resource"
-	"go.opentelemetry.io/otel/sdk/trace"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var (
@@ -18,8 +20,8 @@ var (
 
 func SetupTracer(
 	endpoint string,
-	serviceName string,
-	serviceVersion string,
+	name string,
+	version string,
 ) error {
 	exporter, err := otlptrace.New(
 		context.Background(),
@@ -40,8 +42,8 @@ func SetupTracer(
 		resource.Default(),
 		resource.NewWithAttributes(
 			semconv.SchemaURL,
-			semconv.ServiceName(serviceName),
-			semconv.ServiceVersion(serviceVersion),
+			semconv.ServiceName(name),
+			semconv.ServiceVersion(version),
 		),
 	)
 
@@ -49,10 +51,12 @@ func SetupTracer(
 		return fmt.Errorf("merge resource: %w", err)
 	}
 
-	tracerprovider := trace.NewTracerProvider(
-		trace.WithBatcher(exporter),
-		trace.WithResource(res),
+	tracerprovider := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exporter),
+		sdktrace.WithResource(res),
 	)
+
+	serviceName = name
 
 	otel.SetTracerProvider(tracerprovider)
 
@@ -70,4 +74,18 @@ func TraceFn(ctx context.Context, name string, fn func(ctx context.Context) erro
 	}
 
 	return nil
+}
+
+func Trace(ctx context.Context) (context.Context, trace.Span) {
+	t := otel.Tracer(serviceName)
+	return t.Start(ctx, funcName())
+}
+
+func funcName() string {
+	pc, _, _, ok := runtime.Caller(2)
+	if !ok {
+		return ""
+	}
+
+	return runtime.FuncForPC(pc).Name()
 }

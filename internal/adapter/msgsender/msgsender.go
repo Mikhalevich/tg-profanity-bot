@@ -1,10 +1,13 @@
 package msgsender
 
 import (
+	"context"
 	"fmt"
 	"unicode/utf8"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+
+	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 )
 
 type msgsender struct {
@@ -22,7 +25,10 @@ func New(token string) (*msgsender, error) {
 	}, nil
 }
 
-func (s *msgsender) Edit(originMsg *tgbotapi.Message, msg string) error {
+func (s *msgsender) Edit(ctx context.Context, originMsg *tgbotapi.Message, msg string) error {
+	_, span := tracing.Trace(ctx)
+	defer span.End()
+
 	deletedMsg := tgbotapi.NewDeleteMessage(originMsg.Chat.ID, originMsg.MessageID)
 	//nolint:errcheck
 	// disabled due to api delete error
