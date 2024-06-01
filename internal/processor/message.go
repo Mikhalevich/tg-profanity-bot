@@ -9,7 +9,7 @@ import (
 )
 
 func (p *processor) ProcessMessage(ctx context.Context, msg *tgbotapi.Message) error {
-	ctx, span := tracing.Trace(ctx)
+	ctx, span := tracing.StartSpan(ctx)
 	defer span.End()
 
 	mangledMsg := p.replacer.Replace(ctx, msg.Text)

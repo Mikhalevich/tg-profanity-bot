@@ -26,7 +26,7 @@ func New(token string) (*msgsender, error) {
 }
 
 func (s *msgsender) Edit(ctx context.Context, originMsg *tgbotapi.Message, msg string) error {
-	_, span := tracing.Trace(ctx)
+	_, span := tracing.StartSpan(ctx)
 	defer span.End()
 
 	deletedMsg := tgbotapi.NewDeleteMessage(originMsg.Chat.ID, originMsg.MessageID)

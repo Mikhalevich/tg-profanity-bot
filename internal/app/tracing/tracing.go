@@ -63,21 +63,9 @@ func SetupTracer(
 	return nil
 }
 
-func TraceFn(ctx context.Context, name string, fn func(ctx context.Context) error) error {
+func StartSpan(ctx context.Context) (context.Context, trace.Span) {
 	t := otel.Tracer(serviceName)
-
-	ctx, span := t.Start(ctx, name)
-	defer span.End()
-
-	if err := fn(ctx); err != nil {
-		return fmt.Errorf("trace fn: %w", err)
-	}
-
-	return nil
-}
-
-func Trace(ctx context.Context) (context.Context, trace.Span) {
-	t := otel.Tracer(serviceName)
+	//nolint:spancheck
 	return t.Start(ctx, funcName())
 }
 

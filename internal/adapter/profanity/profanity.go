@@ -29,7 +29,7 @@ func New(matcher Matcher, replacer Replacer) *profanity {
 }
 
 func (p *profanity) Replace(ctx context.Context, msg string) string {
-	ctx, span := tracing.Trace(ctx)
+	ctx, span := tracing.StartSpan(ctx)
 	defer span.End()
 
 	var (
@@ -45,7 +45,7 @@ func (p *profanity) Replace(ctx context.Context, msg string) string {
 }
 
 func (p *profanity) wordsPositions(ctx context.Context, msg string) *position.SortedPositions {
-	_, span := tracing.Trace(ctx)
+	_, span := tracing.StartSpan(ctx)
 	defer span.End()
 
 	var (
@@ -80,7 +80,7 @@ func (p *profanity) wordsPositions(ctx context.Context, msg string) *position.So
 }
 
 func (p *profanity) reduceInnerPositions(ctx context.Context, wordsPositions *position.SortedPositions) []int {
-	_, span := tracing.Trace(ctx)
+	_, span := tracing.StartSpan(ctx)
 	defer span.End()
 
 	var (
@@ -109,7 +109,7 @@ func (p *profanity) reduceInnerPositions(ctx context.Context, wordsPositions *po
 }
 
 func (p *profanity) mangle(ctx context.Context, msg string, positions []int) string {
-	_, span := tracing.Trace(ctx)
+	_, span := tracing.StartSpan(ctx)
 	defer span.End()
 
 	var (
