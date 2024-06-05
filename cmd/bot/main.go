@@ -10,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/bot"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/messagequeue/rabbit/publisher"
@@ -25,6 +26,11 @@ func main() {
 	logger, err := app.SetupLogger(cfg.LogLevel)
 	if err != nil {
 		logger.WithError(err).Error("failed to setup logger")
+		return
+	}
+
+	if err := tracing.SetupTracer(cfg.Tracing.Endpoint, cfg.Tracing.ServiceName, ""); err != nil {
+		logger.WithError(err).Error("failed to setup tracer")
 		return
 	}
 
@@ -98,7 +104,7 @@ func makeRabbitPublisher(rabbitCfg config.RabbitMQProducer) (bot.MessageProcesso
 		return nil, nil, fmt.Errorf("rabbit channel: %w", err)
 	}
 
-	msgPublisher, err := publisher.New(ch, rabbitCfg.MsgQueue)
+	msgPublisher, err := publisher.New(tracing.WrapChannel(ch), rabbitCfg.MsgQueue)
 	if err != nil {
 		return nil, nil, fmt.Errorf("rabbit publisher: %w", err)
 	}

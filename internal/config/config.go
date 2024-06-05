@@ -2,6 +2,7 @@ package config
 
 type Bot struct {
 	LogLevel  string           `yaml:"log_level" required:"true"`
+	Tracing   Tracing          `yaml:"tracing" required:"true"`
 	Updates   BotUpdates       `yaml:"bot" required:"true"`
 	Profanity Profanity        `yaml:"profanity" required:"true"`
 	Rabbit    RabbitMQProducer `yaml:"rabbit"`
@@ -9,6 +10,7 @@ type Bot struct {
 
 type Consumer struct {
 	LogLevel  string           `yaml:"log_level" required:"true"`
+	Tracing   Tracing          `yaml:"tracing" required:"true"`
 	BotToken  string           `yaml:"bot_token" required:"true"`
 	Profanity Profanity        `yaml:"profanity" required:"true"`
 	Rabbit    RabbitMQConsumer `yaml:"rabbit" required:"true"`
@@ -17,6 +19,11 @@ type Consumer struct {
 type BotUpdates struct {
 	Token                string `yaml:"token" required:"true"`
 	UpdateTimeoutSeconds int    `yaml:"update_timeout_seconds" default:"5"`
+}
+
+type Tracing struct {
+	Endpoint    string `yaml:"endpoint" required:"true"`
+	ServiceName string `yaml:"service_name" required:"true"`
 }
 
 type Profanity struct {

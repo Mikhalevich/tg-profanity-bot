@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
@@ -92,6 +93,7 @@ func (c *consumer) processUpdate(ctx context.Context, d amqp.Delivery, processor
 		return fmt.Errorf("json unmarshal: %w", err)
 	}
 
+	ctx = tracing.ExtractContextFromHeaders(ctx, d.Headers)
 	if err := processor.ProcessMessage(ctx, msg); err != nil {
 		return fmt.Errorf("process message: %w", err)
 	}
