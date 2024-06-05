@@ -70,8 +70,14 @@ func (cw *channelWrapper) PublishWithContext(
 	msg amqp.Publishing,
 ) error {
 	traceHeaders := injectContextHeaders(ctx)
-	for k, v := range traceHeaders {
-		msg.Headers[k] = v
+	if len(traceHeaders) > 0 {
+		if msg.Headers == nil {
+			msg.Headers = make(amqp.Table, len(traceHeaders))
+		}
+
+		for k, v := range traceHeaders {
+			msg.Headers[k] = v
+		}
 	}
 
 	if err := cw.Channel.PublishWithContext(ctx, exchange, key, mandatory, immediate, msg); err != nil {
