@@ -10,6 +10,7 @@ type Bot struct {
 
 type Consumer struct {
 	LogLevel  string           `yaml:"log_level" required:"true"`
+	Tracing   Tracing          `yaml:"tracing" required:"true"`
 	BotToken  string           `yaml:"bot_token" required:"true"`
 	Profanity Profanity        `yaml:"profanity" required:"true"`
 	Rabbit    RabbitMQConsumer `yaml:"rabbit" required:"true"`

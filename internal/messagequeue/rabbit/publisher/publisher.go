@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -39,6 +40,9 @@ func New(ch ChannelPublisher, queueName string) (*publisher, error) {
 }
 
 func (p *publisher) ProcessMessage(ctx context.Context, msg *tgbotapi.Message) error {
+	ctx, span := tracing.StartSpan(ctx)
+	defer span.End()
+
 	if err := p.publishJSON(ctx, msg); err != nil {
 		return fmt.Errorf("publish json: %w", err)
 	}

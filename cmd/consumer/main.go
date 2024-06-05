@@ -8,6 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/messagequeue/rabbit/consumer"
 )
@@ -22,6 +23,11 @@ func main() {
 	logger, err := app.SetupLogger(cfg.LogLevel)
 	if err != nil {
 		logger.WithError(err).Error("failed to setup logger")
+		return
+	}
+
+	if err := tracing.SetupTracer(cfg.Tracing.Endpoint, cfg.Tracing.ServiceName, ""); err != nil {
+		logger.WithError(err).Error("failed to setup tracer")
 		return
 	}
 
