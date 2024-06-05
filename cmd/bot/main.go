@@ -104,7 +104,7 @@ func makeRabbitPublisher(rabbitCfg config.RabbitMQProducer) (bot.MessageProcesso
 		return nil, nil, fmt.Errorf("rabbit channel: %w", err)
 	}
 
-	msgPublisher, err := publisher.New(ch, rabbitCfg.MsgQueue)
+	msgPublisher, err := publisher.New(tracing.WrapChannel(ch), rabbitCfg.MsgQueue)
 	if err != nil {
 		return nil, nil, fmt.Errorf("rabbit publisher: %w", err)
 	}
