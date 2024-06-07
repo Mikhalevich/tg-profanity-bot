@@ -16,8 +16,41 @@ import (
 )
 
 var (
-	serviceName string
+	std Tracer = NewNoopTracer()
 )
+
+type Tracer interface {
+	StartSpan(ctx context.Context) (context.Context, trace.Span)
+}
+
+type OtelTracer struct {
+	Name string
+}
+
+func NewOtelTracer(name string) *OtelTracer {
+	return &OtelTracer{
+		Name: name,
+	}
+}
+
+func (t *OtelTracer) StartSpan(ctx context.Context) (context.Context, trace.Span) {
+	tr := otel.Tracer(t.Name)
+	//nolint:spancheck
+	return tr.Start(ctx, callingFuncName())
+}
+
+func callingFuncName() string {
+	pc, _, _, ok := runtime.Caller(2)
+	if !ok {
+		return ""
+	}
+
+	return runtime.FuncForPC(pc).Name()
+}
+
+func StartSpan(ctx context.Context) (context.Context, trace.Span) {
+	return std.StartSpan(ctx)
+}
 
 func SetupTracer(
 	endpoint string,
@@ -57,25 +90,10 @@ func SetupTracer(
 		sdktrace.WithResource(res),
 	)
 
-	serviceName = name
+	std = NewOtelTracer(name)
 
 	otel.SetTracerProvider(tracerprovider)
 	otel.SetTextMapPropagator(propagation.TraceContext{})
 
 	return nil
-}
-
-func StartSpan(ctx context.Context) (context.Context, trace.Span) {
-	t := otel.Tracer(serviceName)
-	//nolint:spancheck
-	return t.Start(ctx, funcName())
-}
-
-func funcName() string {
-	pc, _, _, ok := runtime.Caller(2)
-	if !ok {
-		return ""
-	}
-
-	return runtime.FuncForPC(pc).Name()
 }
