@@ -80,7 +80,7 @@ func (t *OtelTracer) StartSpan(ctx context.Context) (context.Context, trace.Span
 }
 
 func callingFuncName() string {
-	pc, _, _, ok := runtime.Caller(2)
+	pc, _, _, ok := runtime.Caller(3)
 	if !ok {
 		return ""
 	}
