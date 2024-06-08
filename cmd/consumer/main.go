@@ -56,7 +56,7 @@ func main() {
 
 	logger.Info("consumer running...")
 
-	if err := c.Consume(ctx, 10, msgProcessor); err != nil {
+	if err := c.Consume(ctx, cfg.Rabbit.WorkersCount, msgProcessor); err != nil {
 		logger.WithError(err).Error("consume messages")
 		return
 	}
