@@ -27,10 +27,50 @@ type OtelTracer struct {
 	Name string
 }
 
-func NewOtelTracer(name string) *OtelTracer {
+func NewOtelTracer(
+	endpoint string,
+	name string,
+	version string,
+) (*OtelTracer, error) {
+	exporter, err := otlptrace.New(
+		context.Background(),
+		otlptracehttp.NewClient(
+			otlptracehttp.WithEndpoint(endpoint),
+			otlptracehttp.WithHeaders(map[string]string{
+				"content-type": "application/json",
+			}),
+			otlptracehttp.WithInsecure(),
+		),
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("creating exporter: %w", err)
+	}
+
+	res, err := resource.Merge(
+		resource.Default(),
+		resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceName(name),
+			semconv.ServiceVersion(version),
+		),
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("merge resource: %w", err)
+	}
+
+	tracerprovider := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exporter),
+		sdktrace.WithResource(res),
+	)
+
+	otel.SetTracerProvider(tracerprovider)
+	otel.SetTextMapPropagator(propagation.TraceContext{})
+
 	return &OtelTracer{
 		Name: name,
-	}
+	}, nil
 }
 
 func (t *OtelTracer) StartSpan(ctx context.Context) (context.Context, trace.Span) {
@@ -57,43 +97,12 @@ func SetupTracer(
 	name string,
 	version string,
 ) error {
-	exporter, err := otlptrace.New(
-		context.Background(),
-		otlptracehttp.NewClient(
-			otlptracehttp.WithEndpoint(endpoint),
-			otlptracehttp.WithHeaders(map[string]string{
-				"content-type": "application/json",
-			}),
-			otlptracehttp.WithInsecure(),
-		),
-	)
-
+	tr, err := NewOtelTracer(endpoint, name, version)
 	if err != nil {
-		return fmt.Errorf("creating exporter: %w", err)
+		return fmt.Errorf("creating otel tracer: %w", err)
 	}
 
-	res, err := resource.Merge(
-		resource.Default(),
-		resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceName(name),
-			semconv.ServiceVersion(version),
-		),
-	)
-
-	if err != nil {
-		return fmt.Errorf("merge resource: %w", err)
-	}
-
-	tracerprovider := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exporter),
-		sdktrace.WithResource(res),
-	)
-
-	std = NewOtelTracer(name)
-
-	otel.SetTracerProvider(tracerprovider)
-	otel.SetTextMapPropagator(propagation.TraceContext{})
+	std = tr
 
 	return nil
 }
