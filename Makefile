@@ -3,7 +3,7 @@ ROOT := $(dir $(MKFILE_PATH))
 GOBIN ?= $(ROOT)/tools/bin
 BIN_PATH ?= $(ROOT)/bin
 LINTER_NAME := golangci-lint
-LINTER_VERSION := v1.57.2
+LINTER_VERSION := v1.59.1
 
 all: build
 

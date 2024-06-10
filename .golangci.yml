@@ -34,7 +34,6 @@ linters:
     - errchkjson
     - errname
     - errorlint
-    - execinquery
     - exhaustive
     - exportloopref
     - forbidigo
@@ -108,6 +107,7 @@ linters:
     - wrapcheck
     - wsl
     - zerologlint
+    - err113
   disable:
     - gci
     - revive
@@ -115,7 +115,6 @@ linters:
     - tagalign
     - depguard
     - exhaustruct
-    - goerr113
     - nlreturn
     - gomnd
     - ireturn
