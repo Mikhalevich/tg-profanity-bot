@@ -2,6 +2,7 @@ package profanity
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/internal/position"
@@ -9,7 +10,7 @@ import (
 )
 
 type Matcher interface {
-	Match(in []byte) []string
+	Match(chatID string, in []byte) ([]string, error)
 }
 
 type Replacer interface {
@@ -28,30 +29,44 @@ func New(matcher Matcher, replacer Replacer) *profanity {
 	}
 }
 
-func (p *profanity) Replace(ctx context.Context, msg string) string {
+func (p *profanity) Replace(
+	ctx context.Context,
+	chatID string,
+	msg string,
+) (string, error) {
 	ctx, span := tracing.StartSpan(ctx)
 	defer span.End()
 
+	msgLower := strings.ToLower(msg)
+
+	foundedWords, err := p.matcher.Match(chatID, []byte(msgLower))
+	if err != nil {
+		return "", fmt.Errorf("match words: %w", err)
+	}
+
+	if len(foundedWords) == 0 {
+		return msg, nil
+	}
+
 	var (
-		wordsPositions   = p.wordsPositions(ctx, strings.ToLower(msg))
+		wordsPositions   = p.wordsPositions(ctx, msgLower, foundedWords)
 		reducedPositions = p.reduceInnerPositions(ctx, wordsPositions)
 	)
 
 	if len(reducedPositions) == 0 {
-		return msg
+		return msg, nil
 	}
 
-	return p.mangle(ctx, msg, reducedPositions)
+	return p.mangle(ctx, msg, reducedPositions), nil
 }
 
-func (p *profanity) wordsPositions(ctx context.Context, msg string) *position.SortedPositions {
+func (p *profanity) wordsPositions(ctx context.Context, msg string, foundedWords []string) *position.SortedPositions {
 	_, span := tracing.StartSpan(ctx)
 	defer span.End()
 
 	var (
-		msgLen       = len(msg)
-		foundedWords = p.matcher.Match([]byte(msg))
-		positions    = position.NewSortedPositions()
+		msgLen    = len(msg)
+		positions = position.NewSortedPositions()
 	)
 
 	for _, badWord := range foundedWords {

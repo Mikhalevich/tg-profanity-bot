@@ -7,7 +7,7 @@ import (
 )
 
 type TextReplacer interface {
-	Replace(ctx context.Context, msg string) string
+	Replace(ctx context.Context, chatID string, msg string) (string, error)
 }
 
 type MsgSender interface {

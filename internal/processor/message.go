@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -12,7 +13,10 @@ func (p *processor) ProcessMessage(ctx context.Context, msg *tgbotapi.Message) e
 	ctx, span := tracing.StartSpan(ctx)
 	defer span.End()
 
-	mangledMsg := p.replacer.Replace(ctx, msg.Text)
+	mangledMsg, err := p.replacer.Replace(ctx, strconv.FormatInt(msg.Chat.ID, 10), msg.Text)
+	if err != nil {
+		return fmt.Errorf("replace msg: %w", err)
+	}
 
 	if mangledMsg == msg.Text {
 		return nil

@@ -77,7 +77,8 @@ func (s *ProfanityStaticSuit) TestAhocorasickStatic() {
 	)
 
 	for _, tc := range tests {
-		actual := s.p.Replace(context.Background(), tc.Msg)
+		actual, err := s.p.Replace(context.Background(), "", tc.Msg)
+		s.Require().NoError(err)
 		s.Require().EqualValues(tc.ExpectedMsg, actual)
 	}
 }
@@ -140,7 +141,7 @@ func BenchmarkAhocorasickStaticPredefined(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		for _, tc := range tests {
-			p.Replace(context.Background(), tc.Msg)
+			p.Replace(context.Background(), "", tc.Msg)
 		}
 	}
 }
@@ -149,7 +150,7 @@ func BenchmarkAhocorasickStaticNoReplacement(b *testing.B) {
 	p := initStatic(b)
 
 	for i := 0; i < b.N; i++ {
-		p.Replace(context.Background(), "some text without bad words")
+		p.Replace(context.Background(), "", "some text without bad words")
 	}
 }
 
@@ -157,7 +158,7 @@ func BenchmarkAhocorasickStaticSmallText(b *testing.B) {
 	p := initStatic(b)
 
 	for i := 0; i < b.N; i++ {
-		p.Replace(context.Background(), "some dildo small ass test cock case erotic")
+		p.Replace(context.Background(), "", "some dildo small ass test cock case erotic")
 	}
 }
 
@@ -165,7 +166,7 @@ func BenchmarkAhocorasickStaticMediumText(b *testing.B) {
 	p := initStatic(b)
 
 	for i := 0; i < b.N; i++ {
-		p.Replace(context.Background(), strings.Repeat("some dildo small ass test cock case erotic", 30))
+		p.Replace(context.Background(), "", strings.Repeat("some dildo small ass test cock case erotic", 30))
 	}
 }
 
@@ -173,6 +174,6 @@ func BenchmarkAhocorasickStaticLargeText(b *testing.B) {
 	p := initStatic(b)
 
 	for i := 0; i < b.N; i++ {
-		p.Replace(context.Background(), strings.Repeat("some dildo small ass test cock case erotic", 30))
+		p.Replace(context.Background(), "", strings.Repeat("some dildo small ass test cock case erotic", 30))
 	}
 }
