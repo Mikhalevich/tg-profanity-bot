@@ -135,7 +135,9 @@ func BenchmarkAhocorasickDynamicPredefined(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		for _, tc := range tests {
-			p.Replace(context.Background(), "", tc.Msg)
+			if _, err := p.Replace(context.Background(), "", tc.Msg); err != nil {
+				b.Fatalf("unexpected error: %v", err)
+			}
 		}
 	}
 }
@@ -144,7 +146,9 @@ func BenchmarkAhocorasickDynamicNoReplacement(b *testing.B) {
 	p := initDynamic(b)
 
 	for i := 0; i < b.N; i++ {
-		p.Replace(context.Background(), "", "some text without bad words")
+		if _, err := p.Replace(context.Background(), "", "some text without bad words"); err != nil {
+			b.Fatalf("unexpected error: %v", err)
+		}
 	}
 }
 
@@ -152,7 +156,13 @@ func BenchmarkAhocorasickDynamicSmallText(b *testing.B) {
 	p := initDynamic(b)
 
 	for i := 0; i < b.N; i++ {
-		p.Replace(context.Background(), "", "some dildo small ass test cock case erotic")
+		if _, err := p.Replace(
+			context.Background(),
+			"",
+			"some dildo small ass test cock case erotic",
+		); err != nil {
+			b.Fatalf("unexpected error: %v", err)
+		}
 	}
 }
 
@@ -160,7 +170,13 @@ func BenchmarkAhocorasickDynamicMediumText(b *testing.B) {
 	p := initDynamic(b)
 
 	for i := 0; i < b.N; i++ {
-		p.Replace(context.Background(), "", strings.Repeat("some dildo small ass test cock case erotic", 30))
+		if _, err := p.Replace(
+			context.Background(),
+			"",
+			strings.Repeat("some dildo small ass test cock case erotic", 30),
+		); err != nil {
+			b.Fatalf("unexpected error: %v", err)
+		}
 	}
 }
 
@@ -168,6 +184,12 @@ func BenchmarkAhocorasickDynamicLargeText(b *testing.B) {
 	p := initDynamic(b)
 
 	for i := 0; i < b.N; i++ {
-		p.Replace(context.Background(), "", strings.Repeat("some dildo small ass test cock case erotic", 30))
+		if _, err := p.Replace(
+			context.Background(),
+			"",
+			strings.Repeat("some dildo small ass test cock case erotic", 30),
+		); err != nil {
+			b.Fatalf("unexpected error: %v", err)
+		}
 	}
 }
