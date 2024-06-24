@@ -1,0 +1,6 @@
+development:
+  dialect: postgres
+  datasource: "host=postgres port=5432 user=bot password=bot dbname=bot sslmode=disable"
+  dir: script/db/migrations
+  table: migrations
+  
