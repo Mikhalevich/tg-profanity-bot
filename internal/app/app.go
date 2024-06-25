@@ -13,29 +13,44 @@ import (
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/matcher"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/replacer"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/storage/postgres"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/bot"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor"
 )
 
-func MakeProfanityReplacer(cfg config.Profanity) (processor.TextReplacer, error) {
+func MakeProfanityReplacer(cfg config.Profanity, m profanity.Matcher) processor.TextReplacer {
+	if cfg.Dynamic != "" {
+		return profanity.New(m, replacer.NewDynamic(cfg.Dynamic))
+	}
+
+	return profanity.New(m, replacer.NewStatic(cfg.Static))
+}
+
+func MakeMatcher(chatWordsProvider matcher.ChatWordsProvider) (profanity.Matcher, error) {
 	words, err := config.BadWords()
 	if err != nil {
 		return nil, fmt.Errorf("get bad words: %w", err)
 	}
 
-	if cfg.Dynamic != "" {
-		return profanity.New(matcher.NewAhocorasick(words), replacer.NewDynamic(cfg.Dynamic)), nil
+	if chatWordsProvider != nil {
+		return matcher.NewNewAhocorasickDynamic(chatWordsProvider, words), nil
 	}
 
-	return profanity.New(matcher.NewAhocorasick(words), replacer.NewStatic(cfg.Static)), nil
+	return matcher.NewAhocorasick(words), nil
 }
 
-func MakeMsgProcessor(profanityCfg config.Profanity, botToken string) (bot.MessageProcessor, error) {
-	replacer, err := MakeProfanityReplacer(profanityCfg)
+func MakeMsgProcessor(
+	profanityCfg config.Profanity,
+	botToken string,
+	chatWordsProvider matcher.ChatWordsProvider,
+) (bot.MessageProcessor, error) {
+	m, err := MakeMatcher(chatWordsProvider)
 	if err != nil {
-		return nil, fmt.Errorf("make profanity replacer: %w", err)
+		return nil, fmt.Errorf("make matcher: %w", err)
 	}
+
+	replacer := MakeProfanityReplacer(profanityCfg, m)
 
 	msgSender, err := msgsender.New(botToken)
 	if err != nil {
@@ -43,6 +58,21 @@ func MakeMsgProcessor(profanityCfg config.Profanity, botToken string) (bot.Messa
 	}
 
 	return processor.New(replacer, msgSender), nil
+}
+
+func InitPostgres(cfg config.Postgres) (*postgres.Postgres, func(), error) {
+	if cfg.Connection == "" {
+		return nil, func() {}, nil
+	}
+
+	p, err := postgres.New(cfg.Connection)
+	if err != nil {
+		return nil, nil, fmt.Errorf("create postgres: %w", err)
+	}
+
+	return p, func() {
+		p.Close()
+	}, nil
 }
 
 // MakeRabbitAMQPChannel make rabbitmq channel and returns channel itself, clearing func and error.

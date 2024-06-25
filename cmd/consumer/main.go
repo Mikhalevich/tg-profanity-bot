@@ -31,7 +31,7 @@ func main() {
 		return
 	}
 
-	msgProcessor, err := app.MakeMsgProcessor(cfg.Profanity, cfg.BotToken)
+	msgProcessor, err := app.MakeMsgProcessor(cfg.Profanity, cfg.BotToken, nil)
 	if err != nil {
 		logger.WithError(err).Error("init msg processor")
 		return

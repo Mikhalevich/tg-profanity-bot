@@ -9,6 +9,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/matcher"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/bot"
@@ -34,7 +35,15 @@ func main() {
 		return
 	}
 
-	msgProcessor, cleanup, err := makeProcessor(cfg.Rabbit, cfg.Profanity, cfg.Updates.Token)
+	conn, connCleanup, err := app.InitPostgres(cfg.Postgres)
+	if err != nil {
+		logger.WithError(err).Error("failed to init postgres")
+		return
+	}
+
+	defer connCleanup()
+
+	msgProcessor, cleanup, err := makeProcessor(cfg.Rabbit, cfg.Profanity, cfg.Updates.Token, conn)
 	if err != nil {
 		logger.WithError(err).Error("failed to init msg processor")
 		return
@@ -79,6 +88,7 @@ func makeProcessor(
 	rabbitCfg config.RabbitMQProducer,
 	profanityCfg config.Profanity,
 	botToken string,
+	m matcher.ChatWordsProvider,
 ) (bot.MessageProcessor, func(), error) {
 	if rabbitCfg.URL != "" {
 		msgPublisher, cleanup, err := makeRabbitPublisher(rabbitCfg)
@@ -89,7 +99,7 @@ func makeProcessor(
 		return msgPublisher, cleanup, nil
 	}
 
-	msgProcessor, err := app.MakeMsgProcessor(profanityCfg, botToken)
+	msgProcessor, err := app.MakeMsgProcessor(profanityCfg, botToken, m)
 	if err != nil {
 		return nil, nil, fmt.Errorf("msg processor: %w", err)
 	}

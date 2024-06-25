@@ -10,7 +10,11 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func (p *postgres) ChatWords(ctx context.Context, chatID string) ([]string, error) {
+var (
+	errChatNotExists = errors.New("chat is not exists")
+)
+
+func (p *Postgres) ChatWords(ctx context.Context, chatID string) ([]string, error) {
 	query, args, err := sqlx.Named(`
 		SELECT words
 		FROM chat_words
@@ -27,15 +31,9 @@ func (p *postgres) ChatWords(ctx context.Context, chatID string) ([]string, erro
 
 	var jsonb string
 	if err := sqlx.SelectContext(ctx, p.db, &jsonb, p.db.Rebind(query), args...); err != nil {
-		if !errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("select words: %w", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errChatNotExists
 		}
-
-		if err := p.CreateChatWords(ctx, chatID, p.initialWords); err != nil {
-			return nil, fmt.Errorf("create chat words: %w", err)
-		}
-
-		return p.initialWords, nil
 	}
 
 	var words []string
@@ -46,7 +44,11 @@ func (p *postgres) ChatWords(ctx context.Context, chatID string) ([]string, erro
 	return words, nil
 }
 
-func (p *postgres) CreateChatWords(ctx context.Context, chatID string, words []string) error {
+func (p *Postgres) IsChatNotExistsError(err error) bool {
+	return errors.Is(err, errChatNotExists)
+}
+
+func (p *Postgres) CreateChatWords(ctx context.Context, chatID string, words []string) error {
 	payload, err := json.Marshal(words)
 	if err != nil {
 		return fmt.Errorf("marshal words: %w", err)
