@@ -6,8 +6,6 @@ import (
 
 type ChatWordsProvider interface {
 	ChatWords(chatID string) ([]string, error)
-	CreateChatWords(chatID string, words []string) error
-	IsChatNotExistsError(err error) bool
 }
 
 type ahocorasickDynamicMatcher struct {
