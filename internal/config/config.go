@@ -6,6 +6,7 @@ type Bot struct {
 	Updates   BotUpdates       `yaml:"bot" required:"true"`
 	Profanity Profanity        `yaml:"profanity" required:"true"`
 	Rabbit    RabbitMQProducer `yaml:"rabbit"`
+	Postgres  Postgres         `yaml:"postgres"`
 }
 
 type Consumer struct {
@@ -40,4 +41,8 @@ type RabbitMQConsumer struct {
 type RabbitMQProducer struct {
 	URL      string `yaml:"url"`
 	MsgQueue string `yaml:"msg_queue"`
+}
+
+type Postgres struct {
+	Connection string `yaml:"connection"`
 }

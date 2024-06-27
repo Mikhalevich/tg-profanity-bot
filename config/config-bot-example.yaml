@@ -10,4 +10,6 @@ profanity:
   dynamic: "*" 
   # static text
   static: "{censored}"
+postgres:
+  connection: "host=postgres port=5432 user=bot password=bot dbname=bot sslmode=disable"
 

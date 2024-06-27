@@ -1,6 +1,8 @@
 package matcher
 
 import (
+	"context"
+
 	"github.com/cloudflare/ahocorasick"
 )
 
@@ -16,10 +18,10 @@ func NewAhocorasick(words []string) *ahocorasickMatcher {
 	}
 }
 
-func (am *ahocorasickMatcher) Match(in []byte) []string {
+func (am *ahocorasickMatcher) Match(ctx context.Context, chatID string, in []byte) ([]string, error) {
 	wordsIdx := am.m.Match(in)
 	if len(wordsIdx) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	foundedWords := make([]string, 0, len(wordsIdx))
@@ -27,5 +29,5 @@ func (am *ahocorasickMatcher) Match(in []byte) []string {
 		foundedWords = append(foundedWords, am.words[idx])
 	}
 
-	return foundedWords
+	return foundedWords, nil
 }

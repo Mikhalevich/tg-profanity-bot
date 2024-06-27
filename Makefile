@@ -28,6 +28,10 @@ run-bot:
 compose-sync-up:
 	docker-compose -f ./script/docker/docker-compose-sync.yml up --build
 
+.PHONY: compose-db-sync-up
+compose-db-sync-up:
+	docker-compose -f ./script/docker/docker-compose-db-sync.yml up --build
+
 .PHONY: compose-async-up
 compose-async-up:
 	docker-compose -f ./script/docker/docker-compose-async.yml up --build

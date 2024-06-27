@@ -1,0 +1,47 @@
+version: "3"
+services:
+  bot:
+    build:
+      context: ../../
+      dockerfile: script/docker/bot.Dockerfile
+    depends_on:
+      sql-migrate:
+        condition: service_completed_successfully
+    networks:
+      - bot-net
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    ports:
+      - "14268:14268"
+      - "16686:16686"
+      - "4318:4318"
+    networks:
+      - bot-net
+  postgres:
+    image: postgres:16.3-alpine3.20
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: bot
+      POSTGRES_USER: bot
+      POSTGRES_PASSWORD: bot
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bot"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+    networks:
+      - bot-net
+  sql-migrate:
+    build:
+      context: ../../
+      dockerfile: script/docker/sql-migrate.Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bot-net
+networks:
+  bot-net:
+    driver: bridge
