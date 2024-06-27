@@ -20,7 +20,7 @@ func (p *Postgres) ChatWords(ctx context.Context, chatID string) ([]string, erro
 		FROM chat_words
 		WHERE chat_id = :chat_id
 	`,
-		map[string]string{
+		map[string]any{
 			"chat_id": chatID,
 		},
 	)
@@ -30,10 +30,12 @@ func (p *Postgres) ChatWords(ctx context.Context, chatID string) ([]string, erro
 	}
 
 	var jsonb string
-	if err := sqlx.SelectContext(ctx, p.db, &jsonb, p.db.Rebind(query), args...); err != nil {
+	if err := sqlx.GetContext(ctx, p.db, &jsonb, p.db.Rebind(query), args...); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errChatNotExists
 		}
+
+		return nil, fmt.Errorf("select jsonb payload: %w", err)
 	}
 
 	var words []string
