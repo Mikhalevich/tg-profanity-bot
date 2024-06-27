@@ -8,6 +8,7 @@ import (
 	"github.com/jinzhu/configor"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
+	"github.com/uptrace/opentelemetry-go-extra/otelsql"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/msgsender"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity"
@@ -65,13 +66,15 @@ func InitPostgres(cfg config.Postgres) (*postgres.Postgres, func(), error) {
 		return nil, func() {}, nil
 	}
 
-	p, err := postgres.New(cfg.Connection)
+	db, err := otelsql.Open("pgx", cfg.Connection)
 	if err != nil {
-		return nil, nil, fmt.Errorf("create postgres: %w", err)
+		return nil, func() {}, fmt.Errorf("open database: %w", err)
 	}
 
+	p := postgres.New(db, "pgx")
+
 	return p, func() {
-		p.Close()
+		db.Close()
 	}, nil
 }
 

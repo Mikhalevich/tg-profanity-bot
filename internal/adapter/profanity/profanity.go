@@ -10,7 +10,7 @@ import (
 )
 
 type Matcher interface {
-	Match(chatID string, in []byte) ([]string, error)
+	Match(ctx context.Context, chatID string, in []byte) ([]string, error)
 }
 
 type Replacer interface {
@@ -39,7 +39,7 @@ func (p *profanity) Replace(
 
 	msgLower := strings.ToLower(msg)
 
-	foundedWords, err := p.matcher.Match(chatID, []byte(msgLower))
+	foundedWords, err := p.matcher.Match(ctx, chatID, []byte(msgLower))
 	if err != nil {
 		return "", fmt.Errorf("match words: %w", err)
 	}

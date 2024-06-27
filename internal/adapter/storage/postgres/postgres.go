@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"fmt"
+	"database/sql"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
@@ -11,21 +11,8 @@ type Postgres struct {
 	db *sqlx.DB
 }
 
-func New(connection string) (*Postgres, error) {
-	db, err := sqlx.Connect("pgx", connection)
-	if err != nil {
-		return nil, fmt.Errorf("db connect: %w", err)
-	}
-
+func New(db *sql.DB, driverName string) *Postgres {
 	return &Postgres{
-		db: db,
-	}, nil
-}
-
-func (p *Postgres) Close() error {
-	if err := p.db.Close(); err != nil {
-		return fmt.Errorf("close connection: %w", err)
+		db: sqlx.NewDb(db, driverName),
 	}
-
-	return nil
 }

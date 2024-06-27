@@ -23,21 +23,21 @@ func NewNewAhocorasickDynamic(provider ChatWordsProvider, initialChatWords []str
 	}
 }
 
-func (m *ahocorasickDynamicMatcher) Match(chatID string, in []byte) ([]string, error) {
-	words, err := m.cwp.ChatWords(context.Background(), chatID)
+func (m *ahocorasickDynamicMatcher) Match(ctx context.Context, chatID string, in []byte) ([]string, error) {
+	words, err := m.cwp.ChatWords(ctx, chatID)
 	if err != nil {
 		if !m.cwp.IsChatNotExistsError(err) {
 			return nil, fmt.Errorf("chat words: %w", err)
 		}
 
-		if err := m.cwp.CreateChatWords(context.Background(), chatID, m.initialChatWords); err != nil {
+		if err := m.cwp.CreateChatWords(ctx, chatID, m.initialChatWords); err != nil {
 			return nil, fmt.Errorf("create chat words: %w", err)
 		}
 
 		return m.initialChatWords, nil
 	}
 
-	matchedWords, err := NewAhocorasick(words).Match(chatID, in)
+	matchedWords, err := NewAhocorasick(words).Match(ctx, chatID, in)
 	if err != nil {
 		return nil, fmt.Errorf("arhocarasick match: %w", err)
 	}
