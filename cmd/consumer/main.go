@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"os/signal"
 	"syscall"
 
@@ -17,38 +19,48 @@ func main() {
 	var cfg config.Consumer
 	if err := app.LoadConfig(&cfg); err != nil {
 		logrus.WithError(err).Error("failed to load config")
-		return
+		os.Exit(1)
 	}
 
 	logger, err := app.SetupLogger(cfg.LogLevel)
 	if err != nil {
-		logger.WithError(err).Error("failed to setup logger")
-		return
+		logrus.WithError(err).Error("failed to setup logger")
+		os.Exit(1)
 	}
 
+	if err := runService(cfg, logger); err != nil {
+		logger.WithError(err).Error("failed run service")
+		os.Exit(1)
+	}
+}
+
+func runService(cfg config.Consumer, logger *logrus.Logger) error {
 	if err := tracing.SetupTracer(cfg.Tracing.Endpoint, cfg.Tracing.ServiceName, ""); err != nil {
-		logger.WithError(err).Error("failed to setup tracer")
-		return
+		return fmt.Errorf("setup tracer: %w", err)
 	}
 
-	msgProcessor, err := app.MakeMsgProcessor(cfg.Profanity, cfg.BotToken, nil)
+	pg, pgCleanup, err := app.InitPostgres(cfg.Postgres)
 	if err != nil {
-		logger.WithError(err).Error("init msg processor")
-		return
+		return fmt.Errorf("init postgres: %w", err)
+	}
+
+	defer pgCleanup()
+
+	msgProcessor, err := app.MakeMsgProcessor(cfg.Profanity, cfg.BotToken, pg)
+	if err != nil {
+		return fmt.Errorf("init msg processor: %w", err)
 	}
 
 	ch, cleanup, err := app.MakeRabbitAMQPChannel(cfg.Rabbit.URL)
 	if err != nil {
-		logger.WithError(err).Error("failed to init rabbitmq channel")
-		return
+		return fmt.Errorf("init rabbitmq channel: %w", err)
 	}
 
 	defer cleanup()
 
 	c, err := consumer.New(ch, cfg.Rabbit.MsgQueue, logger.WithField("bot_name", "bot_msg_worker"))
 	if err != nil {
-		logger.WithError(err).Error("failed to init message consumer")
-		return
+		return fmt.Errorf("init message consumer: %w", err)
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -57,9 +69,10 @@ func main() {
 	logger.Info("consumer running...")
 
 	if err := c.Consume(ctx, cfg.Rabbit.WorkersCount, msgProcessor); err != nil {
-		logger.WithError(err).Error("consume messages")
-		return
+		return fmt.Errorf("consume messages: %w", err)
 	}
 
 	logger.Info("consumer stopped...")
+
+	return nil
 }

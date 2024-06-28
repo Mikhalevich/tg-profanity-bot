@@ -9,7 +9,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/matcher"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/bot"
@@ -26,7 +25,7 @@ func main() {
 
 	logger, err := app.SetupLogger(cfg.LogLevel)
 	if err != nil {
-		logger.WithError(err).Error("failed to setup logger")
+		logrus.WithError(err).Error("failed to setup logger")
 		os.Exit(1)
 	}
 
@@ -41,14 +40,7 @@ func runService(cfg config.Bot, logger *logrus.Logger) error {
 		return fmt.Errorf("setup tracer: %w", err)
 	}
 
-	conn, connCleanup, err := app.InitPostgres(cfg.Postgres)
-	if err != nil {
-		return fmt.Errorf("init postgres: %w", err)
-	}
-
-	defer connCleanup()
-
-	msgProcessor, cleanup, err := makeProcessor(cfg.Rabbit, cfg.Profanity, cfg.Updates.Token, conn)
+	msgProcessor, cleanup, err := makeProcessor(cfg.Rabbit, cfg.Postgres, cfg.Profanity, cfg.Updates.Token)
 	if err != nil {
 		return fmt.Errorf("init processor: %w", err)
 	}
@@ -91,9 +83,9 @@ loop:
 
 func makeProcessor(
 	rabbitCfg config.RabbitMQProducer,
+	postgresCfg config.Postgres,
 	profanityCfg config.Profanity,
 	botToken string,
-	m matcher.ChatWordsProvider,
 ) (bot.MessageProcessor, func(), error) {
 	if rabbitCfg.URL != "" {
 		msgPublisher, cleanup, err := makeRabbitPublisher(rabbitCfg)
@@ -104,13 +96,17 @@ func makeProcessor(
 		return msgPublisher, cleanup, nil
 	}
 
-	msgProcessor, err := app.MakeMsgProcessor(profanityCfg, botToken, m)
+	pg, pgCleanup, err := app.InitPostgres(postgresCfg)
+	if err != nil {
+		return nil, nil, fmt.Errorf("init postgres: %w", err)
+	}
+
+	msgProcessor, err := app.MakeMsgProcessor(profanityCfg, botToken, pg)
 	if err != nil {
 		return nil, nil, fmt.Errorf("msg processor: %w", err)
 	}
 
-	return msgProcessor, func() {
-	}, nil
+	return msgProcessor, pgCleanup, nil
 }
 
 func makeRabbitPublisher(rabbitCfg config.RabbitMQProducer) (bot.MessageProcessor, func(), error) {
