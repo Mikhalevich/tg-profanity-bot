@@ -15,6 +15,7 @@ type Consumer struct {
 	BotToken  string           `yaml:"bot_token" required:"true"`
 	Profanity Profanity        `yaml:"profanity" required:"true"`
 	Rabbit    RabbitMQConsumer `yaml:"rabbit" required:"true"`
+	Postgres  Postgres         `yaml:"postgres"`
 }
 
 type BotUpdates struct {

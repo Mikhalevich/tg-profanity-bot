@@ -36,6 +36,10 @@ compose-db-sync-up:
 compose-async-up:
 	docker-compose -f ./script/docker/docker-compose-async.yml up --build
 
+.PHONY: compose-db-async-up
+compose-db-async-up:
+	docker-compose -f ./script/docker/docker-compose-db-async.yml up --build
+
 .PHONY: vendor
 vendor:
 	go mod tidy

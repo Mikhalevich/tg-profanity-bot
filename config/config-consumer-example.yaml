@@ -12,4 +12,6 @@ rabbit:
   url: "rabbit_mq_url"
   msg_queue: "msg_processor_queue"
   workers_count: 10
+postgres:
+  connection: "host=postgres port=5432 user=bot password=bot dbname=bot sslmode=disable"
 
