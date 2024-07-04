@@ -72,6 +72,10 @@ func InitPostgres(cfg config.Postgres) (*postgres.Postgres, func(), error) {
 		return nil, func() {}, fmt.Errorf("open database: %w", err)
 	}
 
+	if err := db.Ping(); err != nil {
+		return nil, func() {}, fmt.Errorf("ping: %w", err)
+	}
+
 	p := postgres.New(db, "pgx")
 
 	return p, func() {
