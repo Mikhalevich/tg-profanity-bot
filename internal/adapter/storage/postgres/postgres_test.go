@@ -48,6 +48,18 @@ func (s *PostgresSuit) TearDownSuite() {
 	}
 }
 
+func (s *PostgresSuit) TearDownTest() {
+	s.cleanup()
+}
+
+func (s *PostgresSuit) TearDownSubTest() {
+	s.cleanup()
+}
+
+func (s *PostgresSuit) cleanup() {
+	s.p.db.MustExec("DELETE FROM chat_words")
+}
+
 func connectToDatabase() (*sql.DB, func() error, error) {
 	pool, err := dockertest.NewPool("")
 	if err != nil {
