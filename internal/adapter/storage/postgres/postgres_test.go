@@ -114,8 +114,10 @@ func connectToDatabase() (*sql.DB, func() error, error) {
 }
 
 func migrationsUp(db *sql.DB, pathToMigrations string) error {
+	//nolint:dogsled
 	_, filename, _, _ := runtime.Caller(0)
 	migrationDir, err := filepath.Abs(filepath.Join(path.Dir(filename), pathToMigrations))
+
 	if err != nil {
 		return fmt.Errorf("making migrations dir: %w", err)
 	}

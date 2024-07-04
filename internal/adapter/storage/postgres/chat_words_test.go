@@ -66,5 +66,7 @@ func (s *PostgresSuit) TestCreateAlreadyExistedChat() {
 	s.Require().NoError(err)
 
 	err = s.p.CreateChatWords(ctx, chatID, words)
-	s.Require().EqualError(err, `insert chat words: ERROR: duplicate key value violates unique constraint "chat_words_pkey" (SQLSTATE 23505)`)
+	s.Require().EqualError(err,
+		`insert chat words: ERROR: duplicate key value violates unique constraint "chat_words_pkey" (SQLSTATE 23505)`,
+	)
 }
