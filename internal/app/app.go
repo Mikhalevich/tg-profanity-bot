@@ -46,6 +46,7 @@ func MakeMsgProcessor(
 	profanityCfg config.Profanity,
 	botToken string,
 	chatWordsProvider matcher.ChatWordsProvider,
+	wordsProcessor processor.WordsProcessor,
 ) (bot.MessageProcessor, error) {
 	m, err := MakeMatcher(chatWordsProvider)
 	if err != nil {
@@ -59,7 +60,7 @@ func MakeMsgProcessor(
 		return nil, fmt.Errorf("make msg sender: %w", err)
 	}
 
-	return processor.New(replacer, msgSender), nil
+	return processor.New(replacer, msgSender, wordsProcessor), nil
 }
 
 func InitPostgres(cfg config.Postgres) (*postgres.Postgres, func(), error) {

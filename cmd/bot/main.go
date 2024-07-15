@@ -101,7 +101,7 @@ func makeProcessor(
 		return nil, nil, fmt.Errorf("init postgres: %w", err)
 	}
 
-	msgProcessor, err := app.MakeMsgProcessor(profanityCfg, botToken, pg)
+	msgProcessor, err := app.MakeMsgProcessor(profanityCfg, botToken, pg, pg)
 	if err != nil {
 		return nil, nil, fmt.Errorf("msg processor: %w", err)
 	}

@@ -11,17 +11,24 @@ type TextReplacer interface {
 }
 
 type MsgSender interface {
+	Reply(ctx context.Context, originMsg *tgbotapi.Message, msg string) error
 	Edit(ctx context.Context, originMsg *tgbotapi.Message, msg string) error
 }
 
-type processor struct {
-	replacer  TextReplacer
-	msgSender MsgSender
+type WordsProcessor interface {
+	ChatWords(ctx context.Context, chatID string) ([]string, error)
 }
 
-func New(replacer TextReplacer, msgSender MsgSender) *processor {
+type processor struct {
+	replacer       TextReplacer
+	msgSender      MsgSender
+	wordsProcessor WordsProcessor
+}
+
+func New(replacer TextReplacer, msgSender MsgSender, wordsProcessor WordsProcessor) *processor {
 	return &processor{
-		replacer:  replacer,
-		msgSender: msgSender,
+		replacer:       replacer,
+		msgSender:      msgSender,
+		wordsProcessor: wordsProcessor,
 	}
 }

@@ -13,7 +13,28 @@ func (p *processor) ProcessMessage(ctx context.Context, msg *tgbotapi.Message) e
 	ctx, span := tracing.StartSpan(ctx)
 	defer span.End()
 
-	mangledMsg, err := p.replacer.Replace(ctx, strconv.FormatInt(msg.Chat.ID, 10), msg.Text)
+	var (
+		chatID = strconv.FormatInt(msg.Chat.ID, 10)
+	)
+
+	isProcessed, err := p.tryProcessCommand(ctx, chatID, msg)
+	if err != nil {
+		return fmt.Errorf("process command: %w", err)
+	}
+
+	if isProcessed {
+		return nil
+	}
+
+	if err := p.processReplace(ctx, chatID, msg); err != nil {
+		return fmt.Errorf("process replace: %w", err)
+	}
+
+	return nil
+}
+
+func (p *processor) processReplace(ctx context.Context, chatID string, msg *tgbotapi.Message) error {
+	mangledMsg, err := p.replacer.Replace(ctx, chatID, msg.Text)
 	if err != nil {
 		return fmt.Errorf("replace msg: %w", err)
 	}

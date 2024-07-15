@@ -46,7 +46,7 @@ func runService(cfg config.Consumer, logger *logrus.Logger) error {
 
 	defer pgCleanup()
 
-	msgProcessor, err := app.MakeMsgProcessor(cfg.Profanity, cfg.BotToken, pg)
+	msgProcessor, err := app.MakeMsgProcessor(cfg.Profanity, cfg.BotToken, pg, pg)
 	if err != nil {
 		return fmt.Errorf("init msg processor: %w", err)
 	}
