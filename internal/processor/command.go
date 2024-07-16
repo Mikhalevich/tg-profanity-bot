@@ -14,13 +14,13 @@ func (p *processor) tryProcessCommand(ctx context.Context, chatID string, msg *t
 		return false, nil
 	}
 
-	switch cmd {
-	case "getall":
-		if err := p.GetAllWords(ctx, chatID, msg); err != nil {
-			return false, fmt.Errorf("view words: %w", err)
-		}
-	default:
+	r, ok := p.router[cmd]
+	if !ok {
 		return false, nil
+	}
+
+	if err := r.Handler(ctx, chatID, msg); err != nil {
+		return false, fmt.Errorf("handle command %s: %w", cmd, err)
 	}
 
 	return true, nil

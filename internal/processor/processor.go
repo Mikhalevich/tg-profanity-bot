@@ -3,6 +3,8 @@ package processor
 import (
 	"context"
 
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/cmd"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -23,12 +25,26 @@ type processor struct {
 	replacer       TextReplacer
 	msgSender      MsgSender
 	wordsProcessor WordsProcessor
+	router         cmd.Router
 }
 
 func New(replacer TextReplacer, msgSender MsgSender, wordsProcessor WordsProcessor) *processor {
-	return &processor{
+	p := &processor{
 		replacer:       replacer,
 		msgSender:      msgSender,
 		wordsProcessor: wordsProcessor,
+	}
+
+	p.initRoutes()
+
+	return p
+}
+
+func (p *processor) initRoutes() {
+	p.router = cmd.Router{
+		"getall": {
+			Handler: p.GetAllWords,
+			Perm:    cmd.Admin,
+		},
 	}
 }
