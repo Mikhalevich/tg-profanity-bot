@@ -29,14 +29,14 @@ func MakeProfanityReplacer(cfg config.Profanity, m profanity.Matcher) processor.
 	return profanity.New(m, replacer.NewStatic(cfg.Static))
 }
 
-func MakeMatcher(chatWordsProvider matcher.ChatWordsProvider) (profanity.Matcher, error) {
+func MakeMatcher(pg *postgres.Postgres) (profanity.Matcher, error) {
 	words, err := config.BadWords()
 	if err != nil {
 		return nil, fmt.Errorf("get bad words: %w", err)
 	}
 
-	if chatWordsProvider != nil {
-		return matcher.NewNewAhocorasickDynamic(chatWordsProvider, words), nil
+	if pg != nil {
+		return matcher.NewNewAhocorasickDynamic(pg, words), nil
 	}
 
 	return matcher.NewAhocorasick(words), nil
