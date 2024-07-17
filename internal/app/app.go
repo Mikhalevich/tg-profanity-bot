@@ -43,24 +43,28 @@ func MakeMatcher(chatWordsProvider matcher.ChatWordsProvider) (profanity.Matcher
 }
 
 func MakeMsgProcessor(
-	profanityCfg config.Profanity,
 	botToken string,
-	chatWordsProvider matcher.ChatWordsProvider,
-	wordsProcessor processor.WordsProcessor,
-) (bot.MessageProcessor, error) {
-	m, err := MakeMatcher(chatWordsProvider)
+	pgCfg config.Postgres,
+	profanityCfg config.Profanity,
+) (bot.MessageProcessor, func(), error) {
+	pg, cleanup, err := InitPostgres(pgCfg)
 	if err != nil {
-		return nil, fmt.Errorf("make matcher: %w", err)
+		return nil, nil, fmt.Errorf("init postgres: %w", err)
+	}
+
+	m, err := MakeMatcher(pg)
+	if err != nil {
+		return nil, nil, fmt.Errorf("make matcher: %w", err)
 	}
 
 	replacer := MakeProfanityReplacer(profanityCfg, m)
 
 	msgSender, err := msgsender.New(botToken)
 	if err != nil {
-		return nil, fmt.Errorf("make msg sender: %w", err)
+		return nil, nil, fmt.Errorf("make msg sender: %w", err)
 	}
 
-	return processor.New(replacer, msgSender, wordsProcessor), nil
+	return processor.New(replacer, msgSender, pg), cleanup, nil
 }
 
 func InitPostgres(cfg config.Postgres) (*postgres.Postgres, func(), error) {
@@ -70,11 +74,11 @@ func InitPostgres(cfg config.Postgres) (*postgres.Postgres, func(), error) {
 
 	db, err := otelsql.Open("pgx", cfg.Connection)
 	if err != nil {
-		return nil, func() {}, fmt.Errorf("open database: %w", err)
+		return nil, nil, fmt.Errorf("open database: %w", err)
 	}
 
 	if err := db.Ping(); err != nil {
-		return nil, func() {}, fmt.Errorf("ping: %w", err)
+		return nil, nil, fmt.Errorf("ping: %w", err)
 	}
 
 	p := postgres.New(db, "pgx")
