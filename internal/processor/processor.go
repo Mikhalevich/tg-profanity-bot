@@ -17,22 +17,22 @@ type MsgSender interface {
 	Edit(ctx context.Context, originMsg *tgbotapi.Message, msg string) error
 }
 
-type WordsProcessor interface {
+type WordsProvider interface {
 	ChatWords(ctx context.Context, chatID string) ([]string, error)
 }
 
 type processor struct {
-	replacer       TextReplacer
-	msgSender      MsgSender
-	wordsProcessor WordsProcessor
-	router         cmd.Router
+	replacer      TextReplacer
+	msgSender     MsgSender
+	wordsProvider WordsProvider
+	router        cmd.Router
 }
 
-func New(replacer TextReplacer, msgSender MsgSender, wordsProcessor WordsProcessor) *processor {
+func New(replacer TextReplacer, msgSender MsgSender, wordsProvider WordsProvider) *processor {
 	p := &processor{
-		replacer:       replacer,
-		msgSender:      msgSender,
-		wordsProcessor: wordsProcessor,
+		replacer:      replacer,
+		msgSender:     msgSender,
+		wordsProvider: wordsProvider,
 	}
 
 	p.initRoutes()

@@ -37,7 +37,7 @@ func extractCommand(msg string) (string, string) {
 }
 
 func (p *processor) GetAllWords(ctx context.Context, chatID string, msg *tgbotapi.Message) error {
-	words, err := p.wordsProcessor.ChatWords(ctx, chatID)
+	words, err := p.wordsProvider.ChatWords(ctx, chatID)
 	if err != nil {
 		return fmt.Errorf("get chat words: %w", err)
 	}

@@ -15,6 +15,7 @@ import (
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/matcher"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/replacer"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/staticwords"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/storage/postgres"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/bot"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
@@ -29,17 +30,12 @@ func MakeProfanityReplacer(cfg config.Profanity, m profanity.Matcher) processor.
 	return profanity.New(m, replacer.NewStatic(cfg.Static))
 }
 
-func MakeMatcher(pg *postgres.Postgres) (profanity.Matcher, error) {
-	words, err := config.BadWords()
-	if err != nil {
-		return nil, fmt.Errorf("get bad words: %w", err)
-	}
-
+func MakeMatcher(pg *postgres.Postgres, words []string) profanity.Matcher {
 	if pg != nil {
-		return matcher.NewNewAhocorasickDynamic(pg, words), nil
+		return matcher.NewNewAhocorasickDynamic(pg, words)
 	}
 
-	return matcher.NewAhocorasick(words), nil
+	return matcher.NewAhocorasick(words)
 }
 
 func MakeMsgProcessor(
@@ -52,19 +48,29 @@ func MakeMsgProcessor(
 		return nil, nil, fmt.Errorf("init postgres: %w", err)
 	}
 
-	m, err := MakeMatcher(pg)
+	words, err := config.BadWords()
 	if err != nil {
-		return nil, nil, fmt.Errorf("make matcher: %w", err)
+		return nil, nil, fmt.Errorf("get bad words: %w", err)
 	}
 
-	replacer := MakeProfanityReplacer(profanityCfg, m)
+	replacer := MakeProfanityReplacer(profanityCfg, MakeMatcher(pg, words))
 
 	msgSender, err := msgsender.New(botToken)
 	if err != nil {
 		return nil, nil, fmt.Errorf("make msg sender: %w", err)
 	}
 
-	return processor.New(replacer, msgSender, pg), cleanup, nil
+	wordsProvider := makeWordsProviderFromPG(pg, words)
+
+	return processor.New(replacer, msgSender, wordsProvider), cleanup, nil
+}
+
+func makeWordsProviderFromPG(pg *postgres.Postgres, words []string) processor.WordsProvider {
+	if pg != nil {
+		return pg
+	}
+
+	return staticwords.New(words)
 }
 
 func InitPostgres(cfg config.Postgres) (*postgres.Postgres, func(), error) {
