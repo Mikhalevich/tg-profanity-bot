@@ -70,3 +70,85 @@ func (s *PostgresSuit) TestCreateAlreadyExistedChat() {
 		`insert chat words: ERROR: duplicate key value violates unique constraint "chat_words_pkey" (SQLSTATE 23505)`,
 	)
 }
+
+func (s *PostgresSuit) TestAddWord() {
+	var (
+		ctx    = context.Background()
+		chatID = "chat_id"
+
+		tests = []struct {
+			Name          string
+			Words         []string
+			WordToAdd     string
+			ExpectedWords []string
+		}{
+			{
+				Name: "existing words",
+				Words: []string{
+					"one",
+					"two",
+					"three",
+				},
+				WordToAdd: "new_word",
+				ExpectedWords: []string{
+					"one",
+					"two",
+					"three",
+					"new_word",
+				},
+			},
+			{
+				Name:      "empty slice words",
+				Words:     []string{},
+				WordToAdd: "new_word",
+				ExpectedWords: []string{
+					"new_word",
+				},
+			},
+			{
+				Name:      "nil slice words",
+				Words:     nil,
+				WordToAdd: "new_word",
+				ExpectedWords: []string{
+					"new_word",
+				},
+			},
+		}
+	)
+
+	for _, test := range tests {
+		s.Run(test.Name, func() {
+			err := s.p.CreateChatWords(ctx, chatID, test.Words)
+			s.Require().NoError(err)
+
+			err = s.p.AddWord(ctx, chatID, test.WordToAdd)
+			s.Require().NoError(err)
+
+			actualWords, err := s.p.ChatWords(ctx, chatID)
+			s.Require().NoError(err)
+			s.Require().ElementsMatch(test.ExpectedWords, actualWords)
+		})
+	}
+}
+
+func (s *PostgresSuit) TestAddAlreadyExistingWord() {
+	var (
+		ctx    = context.Background()
+		chatID = "chat_id"
+		words  = []string{
+			"one",
+			"two",
+			"three",
+		}
+	)
+
+	err := s.p.CreateChatWords(ctx, chatID, words)
+	s.Require().NoError(err)
+
+	err = s.p.AddWord(ctx, chatID, "two")
+	s.Require().EqualError(err, errNothingUpdated.Error())
+
+	actualWords, err := s.p.ChatWords(ctx, chatID)
+	s.Require().NoError(err)
+	s.Require().ElementsMatch(words, actualWords)
+}

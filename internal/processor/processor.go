@@ -21,18 +21,30 @@ type WordsProvider interface {
 	ChatWords(ctx context.Context, chatID string) ([]string, error)
 }
 
+type WordsUpdater interface {
+	AddWord(ctx context.Context, chatID string, word string) error
+	IsNothingUpdatedError(err error) bool
+}
+
 type processor struct {
 	replacer      TextReplacer
 	msgSender     MsgSender
 	wordsProvider WordsProvider
+	wordsUpdater  WordsUpdater
 	router        cmd.Router
 }
 
-func New(replacer TextReplacer, msgSender MsgSender, wordsProvider WordsProvider) *processor {
+func New(
+	replacer TextReplacer,
+	msgSender MsgSender,
+	wordsProvider WordsProvider,
+	wordsUpdater WordsUpdater,
+) *processor {
 	p := &processor{
 		replacer:      replacer,
 		msgSender:     msgSender,
 		wordsProvider: wordsProvider,
+		wordsUpdater:  wordsUpdater,
 	}
 
 	p.initRoutes()
@@ -46,5 +58,12 @@ func (p *processor) initRoutes() {
 			Handler: p.GetAllWords,
 			Perm:    cmd.Admin,
 		},
+	}
+
+	if p.wordsUpdater != nil {
+		p.router["addword"] = cmd.Route{
+			Handler: p.AddWord,
+			Perm:    cmd.Admin,
+		}
 	}
 }

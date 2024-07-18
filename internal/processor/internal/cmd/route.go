@@ -14,7 +14,7 @@ const (
 )
 
 type Route struct {
-	Handler func(ctx context.Context, chatID string, msg *tgbotapi.Message) error
+	Handler func(ctx context.Context, chatID string, cmdArgs string, msg *tgbotapi.Message) error
 	Perm    Permission
 }
 

@@ -60,9 +60,12 @@ func MakeMsgProcessor(
 		return nil, nil, fmt.Errorf("make msg sender: %w", err)
 	}
 
-	wordsProvider := makeWordsProviderFromPG(pg, words)
+	var (
+		wordsProvider = makeWordsProviderFromPG(pg, words)
+		wordsUpdater  = makeWordsUpdaterFromPG(pg)
+	)
 
-	return processor.New(replacer, msgSender, wordsProvider), cleanup, nil
+	return processor.New(replacer, msgSender, wordsProvider, wordsUpdater), cleanup, nil
 }
 
 func makeWordsProviderFromPG(pg *postgres.Postgres, words []string) processor.WordsProvider {
@@ -71,6 +74,14 @@ func makeWordsProviderFromPG(pg *postgres.Postgres, words []string) processor.Wo
 	}
 
 	return staticwords.New(words)
+}
+
+func makeWordsUpdaterFromPG(pg *postgres.Postgres) processor.WordsUpdater {
+	if pg != nil {
+		return pg
+	}
+
+	return nil
 }
 
 func InitPostgres(cfg config.Postgres) (*postgres.Postgres, func(), error) {

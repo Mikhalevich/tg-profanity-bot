@@ -11,8 +11,17 @@ import (
 )
 
 var (
-	errChatNotExists = errors.New("chat is not exists")
+	errChatNotExists  = errors.New("chat is not exists")
+	errNothingUpdated = errors.New("nothing updated")
 )
+
+func (p *Postgres) IsChatNotExistsError(err error) bool {
+	return errors.Is(err, errChatNotExists)
+}
+
+func (p *Postgres) IsNothingUpdatedError(err error) bool {
+	return errors.Is(err, errNothingUpdated)
+}
 
 func (p *Postgres) ChatWords(ctx context.Context, chatID string) ([]string, error) {
 	query, args, err := sqlx.Named(`
@@ -46,11 +55,11 @@ func (p *Postgres) ChatWords(ctx context.Context, chatID string) ([]string, erro
 	return words, nil
 }
 
-func (p *Postgres) IsChatNotExistsError(err error) bool {
-	return errors.Is(err, errChatNotExists)
-}
-
 func (p *Postgres) CreateChatWords(ctx context.Context, chatID string, words []string) error {
+	if words == nil {
+		words = []string{}
+	}
+
 	payload, err := json.Marshal(words)
 	if err != nil {
 		return fmt.Errorf("marshal words: %w", err)
@@ -74,8 +83,38 @@ func (p *Postgres) CreateChatWords(ctx context.Context, chatID string, words []s
 	}
 
 	if rows == 0 {
-		//nolint:err113
-		return errors.New("no words inserted")
+		return errNothingUpdated
+	}
+
+	return nil
+}
+
+func (p *Postgres) AddWord(ctx context.Context, chatID string, word string) error {
+	res, err := p.db.NamedExecContext(
+		ctx,
+		`UPDATE chat_words SET
+			words = words || :jsonbWord
+		WHERE
+			chat_id = :chat_id AND
+			NOT words ? :word
+		`,
+		map[string]any{
+			"jsonbWord": fmt.Sprintf("[\"%s\"]", word),
+			"chat_id":   chatID,
+			"word":      word,
+		})
+
+	if err != nil {
+		return fmt.Errorf("update chat words: %w", err)
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("check rows affected: %w", err)
+	}
+
+	if rows == 0 {
+		return errNothingUpdated
 	}
 
 	return nil
