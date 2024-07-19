@@ -55,14 +55,34 @@ func (p *processor) AddWord(ctx context.Context, chatID string, cmdArgs string, 
 			return fmt.Errorf("add word: %w", err)
 		}
 
-		if err := p.msgSender.Reply(ctx, msg, "word already exists"); err != nil {
+		if err := p.msgSender.Reply(ctx, msg, "this word already exists"); err != nil {
 			return fmt.Errorf("reply already exists: %w", err)
 		}
 
 		return nil
 	}
 
-	if err := p.msgSender.Reply(ctx, msg, "updated successfully"); err != nil {
+	if err := p.msgSender.Reply(ctx, msg, "words updated successfully"); err != nil {
+		return fmt.Errorf("success reply: %w", err)
+	}
+
+	return nil
+}
+
+func (p *processor) RemoveWord(ctx context.Context, chatID string, cmdArgs string, msg *tgbotapi.Message) error {
+	if err := p.wordsUpdater.RemoveWord(ctx, chatID, strings.TrimSpace(cmdArgs)); err != nil {
+		if !p.wordsUpdater.IsNothingUpdatedError(err) {
+			return fmt.Errorf("remove word: %w", err)
+		}
+
+		if err := p.msgSender.Reply(ctx, msg, "no such word"); err != nil {
+			return fmt.Errorf("reply no such word: %w", err)
+		}
+
+		return nil
+	}
+
+	if err := p.msgSender.Reply(ctx, msg, "words updated successfully"); err != nil {
 		return fmt.Errorf("success reply: %w", err)
 	}
 

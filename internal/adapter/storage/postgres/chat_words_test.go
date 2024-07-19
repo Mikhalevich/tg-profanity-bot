@@ -152,3 +152,76 @@ func (s *PostgresSuit) TestAddAlreadyExistingWord() {
 	s.Require().NoError(err)
 	s.Require().ElementsMatch(words, actualWords)
 }
+
+func (s *PostgresSuit) TestRemoveWord() {
+	var (
+		ctx    = context.Background()
+		chatID = "chat_id"
+		words  = []string{
+			"one",
+			"two",
+			"three",
+		}
+		expectedWords = []string{
+			"one",
+			"three",
+		}
+	)
+
+	err := s.p.CreateChatWords(ctx, chatID, words)
+	s.Require().NoError(err)
+
+	err = s.p.RemoveWord(ctx, chatID, "two")
+	s.Require().NoError(err)
+
+	actualWords, err := s.p.ChatWords(ctx, chatID)
+	s.Require().NoError(err)
+	s.Require().ElementsMatch(expectedWords, actualWords)
+}
+
+func (s *PostgresSuit) TestRemoveNotExistingWord() {
+	var (
+		ctx    = context.Background()
+		chatID = "chat_id"
+
+		tests = []struct {
+			Name         string
+			Words        []string
+			WordToRemove string
+		}{
+			{
+				Name: "existing words",
+				Words: []string{
+					"one",
+					"two",
+					"three",
+				},
+				WordToRemove: "not_existing_word",
+			},
+			{
+				Name:         "empty slice words",
+				Words:        []string{},
+				WordToRemove: "not_existing_word",
+			},
+			{
+				Name:         "nil slice words",
+				Words:        nil,
+				WordToRemove: "not_existing_word",
+			},
+		}
+	)
+
+	for _, test := range tests {
+		s.Run(test.Name, func() {
+			err := s.p.CreateChatWords(ctx, chatID, test.Words)
+			s.Require().NoError(err)
+
+			err = s.p.RemoveWord(ctx, chatID, test.WordToRemove)
+			s.Require().EqualError(err, errNothingUpdated.Error())
+
+			actualWords, err := s.p.ChatWords(ctx, chatID)
+			s.Require().NoError(err)
+			s.Require().ElementsMatch(test.Words, actualWords)
+		})
+	}
+}

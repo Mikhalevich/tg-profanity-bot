@@ -119,3 +119,33 @@ func (p *Postgres) AddWord(ctx context.Context, chatID string, word string) erro
 
 	return nil
 }
+
+func (p *Postgres) RemoveWord(ctx context.Context, chatID string, word string) error {
+	res, err := p.db.NamedExecContext(
+		ctx,
+		`UPDATE chat_words SET
+			words = words - :word
+		WHERE
+			chat_id = :chat_id AND
+			words ? :word
+		`,
+		map[string]any{
+			"chat_id": chatID,
+			"word":    word,
+		})
+
+	if err != nil {
+		return fmt.Errorf("remove chat word: %w", err)
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("check rows affected: %w", err)
+	}
+
+	if rows == 0 {
+		return errNothingUpdated
+	}
+
+	return nil
+}

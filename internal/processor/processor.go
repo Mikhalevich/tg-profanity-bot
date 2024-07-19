@@ -23,6 +23,7 @@ type WordsProvider interface {
 
 type WordsUpdater interface {
 	AddWord(ctx context.Context, chatID string, word string) error
+	RemoveWord(ctx context.Context, chatID string, word string) error
 	IsNothingUpdatedError(err error) bool
 }
 
@@ -61,8 +62,13 @@ func (p *processor) initRoutes() {
 	}
 
 	if p.wordsUpdater != nil {
-		p.router["addword"] = cmd.Route{
+		p.router["add"] = cmd.Route{
 			Handler: p.AddWord,
+			Perm:    cmd.Admin,
+		}
+
+		p.router["remove"] = cmd.Route{
+			Handler: p.RemoveWord,
 			Perm:    cmd.Admin,
 		}
 	}
