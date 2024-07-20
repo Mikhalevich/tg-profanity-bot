@@ -14,15 +14,24 @@ type msgsender struct {
 	api *tgbotapi.BotAPI
 }
 
-func New(token string) (*msgsender, error) {
-	api, err := tgbotapi.NewBotAPI(token)
-	if err != nil {
-		return nil, fmt.Errorf("create bot api: %w", err)
-	}
-
+func New(api *tgbotapi.BotAPI) *msgsender {
 	return &msgsender{
 		api: api,
-	}, nil
+	}
+}
+
+func (s *msgsender) Reply(ctx context.Context, originMsg *tgbotapi.Message, msg string) error {
+	_, span := tracing.StartSpan(ctx)
+	defer span.End()
+
+	newMsg := tgbotapi.NewMessage(originMsg.Chat.ID, msg)
+	newMsg.ReplyToMessageID = originMsg.MessageID
+
+	if _, err := s.api.Send(newMsg); err != nil {
+		return fmt.Errorf("send reply: %w", err)
+	}
+
+	return nil
 }
 
 func (s *msgsender) Edit(ctx context.Context, originMsg *tgbotapi.Message, msg string) error {
@@ -34,14 +43,14 @@ func (s *msgsender) Edit(ctx context.Context, originMsg *tgbotapi.Message, msg s
 	// disabled due to api delete error
 	s.api.Send(deletedMsg)
 
-	if _, err := s.api.Send(newMessage(originMsg, msg)); err != nil {
+	if _, err := s.api.Send(newEditedMessage(originMsg, msg)); err != nil {
 		return fmt.Errorf("send new: %w", err)
 	}
 
 	return nil
 }
 
-func newMessage(originMsg *tgbotapi.Message, msgText string) *tgbotapi.MessageConfig {
+func newEditedMessage(originMsg *tgbotapi.Message, msgText string) *tgbotapi.MessageConfig {
 	formattedMsgText, msgEntities := formatMessage(msgText, originMsg.From)
 
 	newMsg := tgbotapi.NewMessage(originMsg.Chat.ID, formattedMsgText)

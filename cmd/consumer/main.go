@@ -39,24 +39,19 @@ func runService(cfg config.Consumer, logger *logrus.Logger) error {
 		return fmt.Errorf("setup tracer: %w", err)
 	}
 
-	pg, pgCleanup, err := app.InitPostgres(cfg.Postgres)
-	if err != nil {
-		return fmt.Errorf("init postgres: %w", err)
-	}
-
-	defer pgCleanup()
-
-	msgProcessor, err := app.MakeMsgProcessor(cfg.Profanity, cfg.BotToken, pg)
+	msgProcessor, cleanup, err := app.MakeMsgProcessor(cfg.BotToken, cfg.Postgres, cfg.Profanity)
 	if err != nil {
 		return fmt.Errorf("init msg processor: %w", err)
 	}
 
-	ch, cleanup, err := app.MakeRabbitAMQPChannel(cfg.Rabbit.URL)
+	defer cleanup()
+
+	ch, channelCleanup, err := app.MakeRabbitAMQPChannel(cfg.Rabbit.URL)
 	if err != nil {
 		return fmt.Errorf("init rabbitmq channel: %w", err)
 	}
 
-	defer cleanup()
+	defer channelCleanup()
 
 	c, err := consumer.New(ch, cfg.Rabbit.MsgQueue, logger.WithField("bot_name", "bot_msg_worker"))
 	if err != nil {

@@ -5,16 +5,19 @@ import (
 	"fmt"
 	"os"
 
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jinzhu/configor"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
 	"github.com/uptrace/opentelemetry-go-extra/otelsql"
 
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/memberapi"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/msgsender"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/matcher"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/replacer"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/staticwords"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/storage/postgres"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/bot"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
@@ -29,37 +32,69 @@ func MakeProfanityReplacer(cfg config.Profanity, m profanity.Matcher) processor.
 	return profanity.New(m, replacer.NewStatic(cfg.Static))
 }
 
-func MakeMatcher(chatWordsProvider matcher.ChatWordsProvider) (profanity.Matcher, error) {
-	words, err := config.BadWords()
-	if err != nil {
-		return nil, fmt.Errorf("get bad words: %w", err)
+func MakeMatcher(pg *postgres.Postgres, words []string) profanity.Matcher {
+	if pg != nil {
+		return matcher.NewNewAhocorasickDynamic(pg, words)
 	}
 
-	if chatWordsProvider != nil {
-		return matcher.NewNewAhocorasickDynamic(chatWordsProvider, words), nil
-	}
-
-	return matcher.NewAhocorasick(words), nil
+	return matcher.NewAhocorasick(words)
 }
 
 func MakeMsgProcessor(
-	profanityCfg config.Profanity,
 	botToken string,
-	chatWordsProvider matcher.ChatWordsProvider,
-) (bot.MessageProcessor, error) {
-	m, err := MakeMatcher(chatWordsProvider)
+	pgCfg config.Postgres,
+	profanityCfg config.Profanity,
+) (bot.MessageProcessor, func(), error) {
+	pg, cleanup, err := InitPostgres(pgCfg)
 	if err != nil {
-		return nil, fmt.Errorf("make matcher: %w", err)
+		return nil, nil, fmt.Errorf("init postgres: %w", err)
 	}
 
-	replacer := MakeProfanityReplacer(profanityCfg, m)
-
-	msgSender, err := msgsender.New(botToken)
+	words, err := config.BadWords()
 	if err != nil {
-		return nil, fmt.Errorf("make msg sender: %w", err)
+		return nil, nil, fmt.Errorf("get bad words: %w", err)
 	}
 
-	return processor.New(replacer, msgSender), nil
+	replacer := MakeProfanityReplacer(profanityCfg, MakeMatcher(pg, words))
+
+	api, err := newBotAPI(botToken)
+	if err != nil {
+		return nil, nil, fmt.Errorf("create bot api: %w", err)
+	}
+
+	var (
+		msgSender         = msgsender.New(api)
+		chatMemberChecker = memberapi.New(api)
+		wordsProvider     = makeWordsProviderFromPG(pg, words)
+		wordsUpdater      = makeWordsUpdaterFromPG(pg)
+	)
+
+	return processor.New(replacer, msgSender, wordsProvider, wordsUpdater, chatMemberChecker), cleanup, nil
+}
+
+func newBotAPI(token string) (*tgbotapi.BotAPI, error) {
+	api, err := tgbotapi.NewBotAPI(token)
+	if err != nil {
+		return nil, fmt.Errorf("create bot api: %w", err)
+	}
+
+	return api, nil
+}
+
+func makeWordsProviderFromPG(pg *postgres.Postgres, words []string) processor.WordsProvider {
+	if pg != nil {
+		return pg
+	}
+
+	return staticwords.New(words)
+}
+
+func makeWordsUpdaterFromPG(pg *postgres.Postgres) processor.WordsUpdater {
+	if pg != nil {
+		return pg
+	}
+
+	return nil
 }
 
 func InitPostgres(cfg config.Postgres) (*postgres.Postgres, func(), error) {
@@ -69,11 +104,11 @@ func InitPostgres(cfg config.Postgres) (*postgres.Postgres, func(), error) {
 
 	db, err := otelsql.Open("pgx", cfg.Connection)
 	if err != nil {
-		return nil, func() {}, fmt.Errorf("open database: %w", err)
+		return nil, nil, fmt.Errorf("open database: %w", err)
 	}
 
 	if err := db.Ping(); err != nil {
-		return nil, func() {}, fmt.Errorf("ping: %w", err)
+		return nil, nil, fmt.Errorf("ping: %w", err)
 	}
 
 	p := postgres.New(db, "pgx")

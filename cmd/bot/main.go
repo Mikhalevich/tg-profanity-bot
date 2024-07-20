@@ -96,17 +96,12 @@ func makeProcessor(
 		return msgPublisher, cleanup, nil
 	}
 
-	pg, pgCleanup, err := app.InitPostgres(postgresCfg)
-	if err != nil {
-		return nil, nil, fmt.Errorf("init postgres: %w", err)
-	}
-
-	msgProcessor, err := app.MakeMsgProcessor(profanityCfg, botToken, pg)
+	msgProcessor, cleanup, err := app.MakeMsgProcessor(botToken, postgresCfg, profanityCfg)
 	if err != nil {
 		return nil, nil, fmt.Errorf("msg processor: %w", err)
 	}
 
-	return msgProcessor, pgCleanup, nil
+	return msgProcessor, cleanup, nil
 }
 
 func makeRabbitPublisher(rabbitCfg config.RabbitMQProducer) (bot.MessageProcessor, func(), error) {
