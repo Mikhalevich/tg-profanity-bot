@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+
+	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 )
 
 func (p *processor) tryProcessCommand(ctx context.Context, chatID string, msg *tgbotapi.Message) (bool, error) {
@@ -17,6 +19,15 @@ func (p *processor) tryProcessCommand(ctx context.Context, chatID string, msg *t
 	r, ok := p.router[cmd]
 	if !ok {
 		return false, nil
+	}
+
+	ctx, span := tracing.StartSpan(ctx)
+	defer span.End()
+
+	if r.IsAdmin() {
+		if !p.memberChecker.IsAdmin(msg.Chat.ID, msg.From.ID) {
+			return false, nil
+		}
 	}
 
 	if err := r.Handler(ctx, chatID, args, msg); err != nil {

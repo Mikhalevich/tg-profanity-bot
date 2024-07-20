@@ -27,11 +27,16 @@ type WordsUpdater interface {
 	IsNothingUpdatedError(err error) bool
 }
 
+type ChatMemberChecker interface {
+	IsAdmin(chatID, userID int64) bool
+}
+
 type processor struct {
 	replacer      TextReplacer
 	msgSender     MsgSender
 	wordsProvider WordsProvider
 	wordsUpdater  WordsUpdater
+	memberChecker ChatMemberChecker
 	router        cmd.Router
 }
 
@@ -40,12 +45,14 @@ func New(
 	msgSender MsgSender,
 	wordsProvider WordsProvider,
 	wordsUpdater WordsUpdater,
+	memberChecker ChatMemberChecker,
 ) *processor {
 	p := &processor{
 		replacer:      replacer,
 		msgSender:     msgSender,
 		wordsProvider: wordsProvider,
 		wordsUpdater:  wordsUpdater,
+		memberChecker: memberChecker,
 	}
 
 	p.initRoutes()

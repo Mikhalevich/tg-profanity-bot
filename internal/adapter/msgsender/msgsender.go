@@ -14,15 +14,10 @@ type msgsender struct {
 	api *tgbotapi.BotAPI
 }
 
-func New(token string) (*msgsender, error) {
-	api, err := tgbotapi.NewBotAPI(token)
-	if err != nil {
-		return nil, fmt.Errorf("create bot api: %w", err)
-	}
-
+func New(api *tgbotapi.BotAPI) *msgsender {
 	return &msgsender{
 		api: api,
-	}, nil
+	}
 }
 
 func (s *msgsender) Reply(ctx context.Context, originMsg *tgbotapi.Message, msg string) error {

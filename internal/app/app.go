@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"os"
 
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jinzhu/configor"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
 	"github.com/uptrace/opentelemetry-go-extra/otelsql"
 
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/memberapi"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/msgsender"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/matcher"
@@ -55,17 +57,28 @@ func MakeMsgProcessor(
 
 	replacer := MakeProfanityReplacer(profanityCfg, MakeMatcher(pg, words))
 
-	msgSender, err := msgsender.New(botToken)
+	api, err := newBotAPI(botToken)
 	if err != nil {
-		return nil, nil, fmt.Errorf("make msg sender: %w", err)
+		return nil, nil, fmt.Errorf("create bot api: %w", err)
 	}
 
 	var (
-		wordsProvider = makeWordsProviderFromPG(pg, words)
-		wordsUpdater  = makeWordsUpdaterFromPG(pg)
+		msgSender         = msgsender.New(api)
+		chatMemberChecker = memberapi.New(api)
+		wordsProvider     = makeWordsProviderFromPG(pg, words)
+		wordsUpdater      = makeWordsUpdaterFromPG(pg)
 	)
 
-	return processor.New(replacer, msgSender, wordsProvider, wordsUpdater), cleanup, nil
+	return processor.New(replacer, msgSender, wordsProvider, wordsUpdater, chatMemberChecker), cleanup, nil
+}
+
+func newBotAPI(token string) (*tgbotapi.BotAPI, error) {
+	api, err := tgbotapi.NewBotAPI(token)
+	if err != nil {
+		return nil, fmt.Errorf("create bot api: %w", err)
+	}
+
+	return api, nil
 }
 
 func makeWordsProviderFromPG(pg *postgres.Postgres, words []string) processor.WordsProvider {
