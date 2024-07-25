@@ -61,30 +61,9 @@ func (p *processor) GetAllWords(ctx context.Context, chatID string, cmdArgs stri
 	return nil
 }
 
-func (p *processor) AddWord(ctx context.Context, chatID string, cmdArgs string, msg *tgbotapi.Message) error {
-	word := strings.TrimSpace(cmdArgs)
-	if err := p.wordsUpdater.AddWord(ctx, chatID, word); err != nil {
-		if !p.wordsUpdater.IsNothingUpdatedError(err) {
-			return fmt.Errorf("add word: %w", err)
-		}
-
-		if err := p.msgSender.Reply(ctx, msg, "this word already exists"); err != nil {
-			return fmt.Errorf("reply already exists: %w", err)
-		}
-
-		return nil
-	}
-
-	if err := p.msgSender.Reply(ctx, msg, "words updated successfully", makeRevertButton(word)); err != nil {
-		return fmt.Errorf("success reply: %w", err)
-	}
-
-	return nil
-}
-
-func makeRevertButton(word string) []tgbotapi.InlineKeyboardButton {
+func makeRevertButton(cmd, word string) []tgbotapi.InlineKeyboardButton {
 	buttonInfo, err := button.ButtonCMDInfo{
-		CMD:  "remove",
+		CMD:  cmd,
 		Word: word,
 	}.ToBase64()
 
@@ -95,24 +74,4 @@ func makeRevertButton(word string) []tgbotapi.InlineKeyboardButton {
 	return tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("revert", buttonInfo),
 	)
-}
-
-func (p *processor) RemoveWord(ctx context.Context, chatID string, cmdArgs string, msg *tgbotapi.Message) error {
-	if err := p.wordsUpdater.RemoveWord(ctx, chatID, strings.TrimSpace(cmdArgs)); err != nil {
-		if !p.wordsUpdater.IsNothingUpdatedError(err) {
-			return fmt.Errorf("remove word: %w", err)
-		}
-
-		if err := p.msgSender.Reply(ctx, msg, "no such word"); err != nil {
-			return fmt.Errorf("reply no such word: %w", err)
-		}
-
-		return nil
-	}
-
-	if err := p.msgSender.Reply(ctx, msg, "words updated successfully"); err != nil {
-		return fmt.Errorf("success reply: %w", err)
-	}
-
-	return nil
 }
