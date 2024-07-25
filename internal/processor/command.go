@@ -8,6 +8,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/button"
 )
 
 func (p *processor) tryProcessCommand(ctx context.Context, chatID string, msg *tgbotapi.Message) (bool, error) {
@@ -16,7 +17,7 @@ func (p *processor) tryProcessCommand(ctx context.Context, chatID string, msg *t
 		return false, nil
 	}
 
-	r, ok := p.router[cmd]
+	r, ok := p.cmdRouter[cmd]
 	if !ok {
 		return false, nil
 	}
@@ -61,7 +62,8 @@ func (p *processor) GetAllWords(ctx context.Context, chatID string, cmdArgs stri
 }
 
 func (p *processor) AddWord(ctx context.Context, chatID string, cmdArgs string, msg *tgbotapi.Message) error {
-	if err := p.wordsUpdater.AddWord(ctx, chatID, strings.TrimSpace(cmdArgs)); err != nil {
+	word := strings.TrimSpace(cmdArgs)
+	if err := p.wordsUpdater.AddWord(ctx, chatID, word); err != nil {
 		if !p.wordsUpdater.IsNothingUpdatedError(err) {
 			return fmt.Errorf("add word: %w", err)
 		}
@@ -73,11 +75,26 @@ func (p *processor) AddWord(ctx context.Context, chatID string, cmdArgs string, 
 		return nil
 	}
 
-	if err := p.msgSender.Reply(ctx, msg, "words updated successfully"); err != nil {
+	if err := p.msgSender.Reply(ctx, msg, "words updated successfully", makeRevertButton(word)); err != nil {
 		return fmt.Errorf("success reply: %w", err)
 	}
 
 	return nil
+}
+
+func makeRevertButton(word string) []tgbotapi.InlineKeyboardButton {
+	buttonInfo, err := button.ButtonCMDInfo{
+		CMD:  "remove",
+		Word: word,
+	}.ToBase64()
+
+	if err != nil {
+		return nil
+	}
+
+	return tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("revert", buttonInfo),
+	)
 }
 
 func (p *processor) RemoveWord(ctx context.Context, chatID string, cmdArgs string, msg *tgbotapi.Message) error {

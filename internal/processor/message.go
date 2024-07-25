@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+
+	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 )
 
 func (p *processor) ProcessMessage(ctx context.Context, msg *tgbotapi.Message) error {

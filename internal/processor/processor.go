@@ -13,7 +13,7 @@ type TextReplacer interface {
 }
 
 type MsgSender interface {
-	Reply(ctx context.Context, originMsg *tgbotapi.Message, msg string) error
+	Reply(ctx context.Context, originMsg *tgbotapi.Message, msg string, buttons ...[]tgbotapi.InlineKeyboardButton) error
 	Edit(ctx context.Context, originMsg *tgbotapi.Message, msg string) error
 }
 
@@ -37,7 +37,8 @@ type processor struct {
 	wordsProvider WordsProvider
 	wordsUpdater  WordsUpdater
 	memberChecker ChatMemberChecker
-	router        cmd.Router
+	cmdRouter     cmd.Router
+	buttonsRouter cmd.Router
 }
 
 func New(
@@ -55,13 +56,14 @@ func New(
 		memberChecker: memberChecker,
 	}
 
-	p.initRoutes()
+	p.initCommandRoutes()
+	p.initButtonsRoutes()
 
 	return p
 }
 
-func (p *processor) initRoutes() {
-	p.router = cmd.Router{
+func (p *processor) initCommandRoutes() {
+	p.cmdRouter = cmd.Router{
 		"getall": {
 			Handler: p.GetAllWords,
 			Perm:    cmd.Admin,
@@ -69,14 +71,31 @@ func (p *processor) initRoutes() {
 	}
 
 	if p.wordsUpdater != nil {
-		p.router["add"] = cmd.Route{
+		p.cmdRouter["add"] = cmd.Route{
 			Handler: p.AddWord,
 			Perm:    cmd.Admin,
 		}
 
-		p.router["remove"] = cmd.Route{
+		p.cmdRouter["remove"] = cmd.Route{
 			Handler: p.RemoveWord,
 			Perm:    cmd.Admin,
 		}
+	}
+}
+
+func (p *processor) initButtonsRoutes() {
+	if p.wordsUpdater == nil {
+		return
+	}
+
+	p.buttonsRouter = cmd.Router{
+		"add": {
+			Handler: p.AddWord,
+			Perm:    cmd.Admin,
+		},
+		"remove": {
+			Handler: p.RemoveWord,
+			Perm:    cmd.Admin,
+		},
 	}
 }
