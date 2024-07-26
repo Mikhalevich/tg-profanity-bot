@@ -2,7 +2,6 @@ package processor
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -16,10 +15,6 @@ func (p *processor) ProcessCallbackQuery(ctx context.Context, query *tgbotapi.Ca
 	ctx, span := tracing.StartSpan(ctx)
 	defer span.End()
 
-	if query.Message == nil {
-		return errors.New("message expired")
-	}
-
 	buttonInfo, err := button.FromBase64(query.Data)
 	if err != nil {
 		return fmt.Errorf("decode base64 data: %w", err)
@@ -30,10 +25,12 @@ func (p *processor) ProcessCallbackQuery(ctx context.Context, query *tgbotapi.Ca
 		return fmt.Errorf("unsupported command %s", buttonInfo.CMD)
 	}
 
-	if r.IsAdmin() {
-		if !p.memberChecker.IsAdmin(query.Message.Chat.ID, query.From.ID) {
-			return errors.New("no admin permission")
+	if r.IsAdmin() && !p.memberChecker.IsAdmin(query.Message.Chat.ID, query.From.ID) {
+		if err := p.msgSender.Reply(ctx, query.Message, "need admin permission"); err != nil {
+			return fmt.Errorf("send perm message: %w", err)
 		}
+
+		return nil
 	}
 
 	if err := r.Handler(ctx, strconv.FormatInt(query.Message.Chat.ID, 10), buttonInfo.Word, query.Message); err != nil {
