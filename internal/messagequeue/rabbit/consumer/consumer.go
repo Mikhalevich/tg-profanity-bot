@@ -6,14 +6,17 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
+
+	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/messagequeue/rabbit/internal/contract"
 )
 
 type MessageProcessor interface {
 	ProcessMessage(ctx context.Context, msg *tgbotapi.Message) error
+	ProcessCallbackQuery(ctx context.Context, query *tgbotapi.CallbackQuery) error
 }
 
 type consumer struct {
@@ -88,14 +91,42 @@ func (c *consumer) runWorkers(ctx context.Context, count int, processor MessageP
 }
 
 func (c *consumer) processUpdate(ctx context.Context, d amqp.Delivery, processor MessageProcessor) error {
+	ctx = tracing.ExtractContextFromHeaders(ctx, d.Headers)
+
+	c.logger.WithField("message_type", d.Type).Debug("received rabbit update")
+
+	switch contract.MessageType(d.Type) {
+	case contract.Message:
+		return c.processMessage(ctx, d.Body, processor)
+
+	case contract.CallbackQuery:
+		return c.processCallbackQuery(ctx, d.Body, processor)
+	}
+
+	return fmt.Errorf("unsupported type: %s", d.Type)
+}
+
+func (c *consumer) processMessage(ctx context.Context, body []byte, processor MessageProcessor) error {
 	var msg *tgbotapi.Message
-	if err := json.Unmarshal(d.Body, &msg); err != nil {
+	if err := json.Unmarshal(body, &msg); err != nil {
 		return fmt.Errorf("json unmarshal: %w", err)
 	}
 
-	ctx = tracing.ExtractContextFromHeaders(ctx, d.Headers)
 	if err := processor.ProcessMessage(ctx, msg); err != nil {
 		return fmt.Errorf("process message: %w", err)
+	}
+
+	return nil
+}
+
+func (c *consumer) processCallbackQuery(ctx context.Context, body []byte, processor MessageProcessor) error {
+	var query *tgbotapi.CallbackQuery
+	if err := json.Unmarshal(body, &query); err != nil {
+		return fmt.Errorf("json unmarshal: %w", err)
+	}
+
+	if err := processor.ProcessCallbackQuery(ctx, query); err != nil {
+		return fmt.Errorf("process callback query: %w", err)
 	}
 
 	return nil

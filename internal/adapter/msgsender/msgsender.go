@@ -20,20 +20,6 @@ func New(api *tgbotapi.BotAPI) *msgsender {
 	}
 }
 
-func (s *msgsender) Reply(ctx context.Context, originMsg *tgbotapi.Message, msg string) error {
-	_, span := tracing.StartSpan(ctx)
-	defer span.End()
-
-	newMsg := tgbotapi.NewMessage(originMsg.Chat.ID, msg)
-	newMsg.ReplyToMessageID = originMsg.MessageID
-
-	if _, err := s.api.Send(newMsg); err != nil {
-		return fmt.Errorf("send reply: %w", err)
-	}
-
-	return nil
-}
-
 func (s *msgsender) Edit(ctx context.Context, originMsg *tgbotapi.Message, msg string) error {
 	_, span := tracing.StartSpan(ctx)
 	defer span.End()

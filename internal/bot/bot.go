@@ -11,6 +11,7 @@ import (
 
 type MessageProcessor interface {
 	ProcessMessage(ctx context.Context, msg *tgbotapi.Message) error
+	ProcessCallbackQuery(ctx context.Context, query *tgbotapi.CallbackQuery) error
 }
 
 type bot struct {
@@ -45,25 +46,15 @@ func (b *bot) ProcessUpdates(timeout int) {
 	var wg sync.WaitGroup
 
 	for update := range updates {
-		msg := extractTextMessage(&update)
-		if msg == nil {
-			continue
-		}
-
-		b.logger.WithFields(logrus.Fields{
-			"chat_id": msg.Chat.ID,
-			"message": msg.Text,
-		}).Debug("incoming message")
-
 		wg.Add(1)
 
-		go func(msg *tgbotapi.Message) {
+		go func(update *tgbotapi.Update) {
 			defer wg.Done()
 
-			if err := b.processMessage(context.Background(), msg); err != nil {
-				b.logger.WithError(err).Error("process message")
+			if err := b.processUpdate(context.Background(), update); err != nil {
+				b.logger.WithError(err).Error("process update")
 			}
-		}(msg)
+		}(&update)
 	}
 
 	wg.Wait()
@@ -90,9 +81,27 @@ func extractMessage(u *tgbotapi.Update) *tgbotapi.Message {
 	return nil
 }
 
-func (b *bot) processMessage(ctx context.Context, msg *tgbotapi.Message) error {
-	if err := b.processor.ProcessMessage(ctx, msg); err != nil {
-		return fmt.Errorf("process message: %w", err)
+func (b *bot) processUpdate(ctx context.Context, update *tgbotapi.Update) error {
+	msg := extractTextMessage(update)
+	if msg != nil {
+		b.logger.WithFields(logrus.Fields{
+			"chat_id": msg.Chat.ID,
+			"message": msg.Text,
+		}).Debug("incoming message")
+
+		if err := b.processor.ProcessMessage(ctx, msg); err != nil {
+			return fmt.Errorf("process message: %w", err)
+		}
+
+		return nil
+	}
+
+	if update.CallbackQuery != nil {
+		if err := b.processor.ProcessCallbackQuery(ctx, update.CallbackQuery); err != nil {
+			return fmt.Errorf("process callback query: %w", err)
+		}
+
+		return nil
 	}
 
 	return nil

@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	amqp "github.com/rabbitmq/amqp091-go"
+
+	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/messagequeue/rabbit/internal/contract"
 )
 
 type ChannelPublisher interface {
@@ -43,14 +45,25 @@ func (p *publisher) ProcessMessage(ctx context.Context, msg *tgbotapi.Message) e
 	ctx, span := tracing.StartSpan(ctx)
 	defer span.End()
 
-	if err := p.publishJSON(ctx, msg); err != nil {
+	if err := p.publishJSON(ctx, msg, contract.Message); err != nil {
 		return fmt.Errorf("publish json: %w", err)
 	}
 
 	return nil
 }
 
-func (p *publisher) publishJSON(ctx context.Context, obj any) error {
+func (p *publisher) ProcessCallbackQuery(ctx context.Context, query *tgbotapi.CallbackQuery) error {
+	ctx, span := tracing.StartSpan(ctx)
+	defer span.End()
+
+	if err := p.publishJSON(ctx, query, contract.CallbackQuery); err != nil {
+		return fmt.Errorf("publish json: %w", err)
+	}
+
+	return nil
+}
+
+func (p *publisher) publishJSON(ctx context.Context, obj any, messageType contract.MessageType) error {
 	b, err := json.Marshal(obj)
 	if err != nil {
 		return fmt.Errorf("json marshal: %w", err)
@@ -66,6 +79,7 @@ func (p *publisher) publishJSON(ctx context.Context, obj any) error {
 			DeliveryMode: amqp.Persistent,
 			ContentType:  "application/json",
 			Body:         b,
+			Type:         messageType.String(),
 		},
 	); err != nil {
 		return fmt.Errorf("publish: %w", err)
