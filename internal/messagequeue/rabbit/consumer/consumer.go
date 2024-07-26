@@ -103,7 +103,7 @@ func (c *consumer) processUpdate(ctx context.Context, d amqp.Delivery, processor
 		return c.processCallbackQuery(ctx, d.Body, processor)
 	}
 
-	return nil
+	return fmt.Errorf("unsupported type: %s", d.Type)
 }
 
 func (c *consumer) processMessage(ctx context.Context, body []byte, processor MessageProcessor) error {
