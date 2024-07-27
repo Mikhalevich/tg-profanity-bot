@@ -61,10 +61,10 @@ func (p *processor) GetAllWords(ctx context.Context, chatID string, cmdArgs stri
 	return nil
 }
 
-func makeRevertButton(cmd, word string) []tgbotapi.InlineKeyboardButton {
+func revertButton(cmd, word string) []tgbotapi.InlineKeyboardButton {
 	buttonInfo, err := button.ButtonCMDInfo{
-		CMD:  cmd,
-		Word: word,
+		CMD:     cmd,
+		Payload: []byte(word),
 	}.ToBase64()
 
 	if err != nil {

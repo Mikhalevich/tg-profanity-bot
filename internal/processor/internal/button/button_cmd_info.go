@@ -7,8 +7,8 @@ import (
 )
 
 type ButtonCMDInfo struct {
-	CMD  string `json:"cmd"`
-	Word string `json:"word"`
+	CMD     string `json:"cmd"`
+	Payload []byte `json:"payload"`
 }
 
 func FromBase64(data string) (ButtonCMDInfo, error) {

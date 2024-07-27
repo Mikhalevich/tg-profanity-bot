@@ -8,6 +8,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/button"
 )
 
 func (p *processor) ProcessMessage(ctx context.Context, msg *tgbotapi.Message) error {
@@ -44,9 +45,24 @@ func (p *processor) processReplace(ctx context.Context, chatID string, msg *tgbo
 		return nil
 	}
 
-	if err := p.msgSender.Edit(ctx, msg, mangledMsg); err != nil {
+	if err := p.msgSender.Edit(ctx, msg, mangledMsg, viewOriginMsgButton(msg.Text)); err != nil {
 		return fmt.Errorf("msg edit: %w", err)
 	}
 
 	return nil
+}
+
+func viewOriginMsgButton(msg string) []tgbotapi.InlineKeyboardButton {
+	buttonInfo, err := button.ButtonCMDInfo{
+		CMD:     "viewOriginMsg",
+		Payload: []byte(msg),
+	}.ToBase64()
+
+	if err != nil {
+		return nil
+	}
+
+	return tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("view origin msg", buttonInfo),
+	)
 }

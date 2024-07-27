@@ -33,7 +33,12 @@ func (p *processor) ProcessCallbackQuery(ctx context.Context, query *tgbotapi.Ca
 		return nil
 	}
 
-	if err := r.Handler(ctx, strconv.FormatInt(query.Message.Chat.ID, 10), buttonInfo.Word, query.Message); err != nil {
+	var (
+		chatID  = strconv.FormatInt(query.Message.Chat.ID, 10)
+		payload = string(buttonInfo.Payload)
+	)
+
+	if err := r.Handler(ctx, chatID, payload, query.Message); err != nil {
 		return fmt.Errorf("handle query %s: %w", buttonInfo.CMD, err)
 	}
 

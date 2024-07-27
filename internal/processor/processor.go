@@ -14,7 +14,7 @@ type TextReplacer interface {
 
 type MsgSender interface {
 	Reply(ctx context.Context, originMsg *tgbotapi.Message, msg string, buttons ...[]tgbotapi.InlineKeyboardButton) error
-	Edit(ctx context.Context, originMsg *tgbotapi.Message, msg string) error
+	Edit(ctx context.Context, originMsg *tgbotapi.Message, msg string, buttons ...[]tgbotapi.InlineKeyboardButton) error
 }
 
 type WordsProvider interface {
@@ -95,6 +95,10 @@ func (p *processor) initButtonsRoutes() {
 		},
 		"remove": {
 			Handler: p.RemoveWordCallbackQuery,
+			Perm:    cmd.Admin,
+		},
+		"viewOriginMsg": {
+			Handler: p.ViewOriginMsgCallbackQuery,
 			Perm:    cmd.Admin,
 		},
 	}
