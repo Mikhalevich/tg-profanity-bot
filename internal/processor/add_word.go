@@ -7,11 +7,13 @@ import (
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/cmd"
 )
 
 func (p *processor) AddWordCommand(ctx context.Context, chatID string, cmdArgs string, msg *tgbotapi.Message) error {
 	word := strings.TrimSpace(cmdArgs)
-	return p.addWord(ctx, chatID, word, msg, revertButton("remove", word))
+	return p.addWord(ctx, chatID, word, msg, revertButton(cmd.Remove, word))
 }
 
 func (p *processor) AddWordCallbackQuery(ctx context.Context, chatID string, word string, msg *tgbotapi.Message) error {

@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/cmd"
 )
 
 func (p *processor) RemoveWordCommand(
@@ -16,7 +18,7 @@ func (p *processor) RemoveWordCommand(
 	msg *tgbotapi.Message,
 ) error {
 	word := strings.TrimSpace(cmdArgs)
-	return p.removeWord(ctx, chatID, word, msg, revertButton("add", word))
+	return p.removeWord(ctx, chatID, word, msg, revertButton(cmd.Add, word))
 }
 
 func (p *processor) RemoveWordCallbackQuery(

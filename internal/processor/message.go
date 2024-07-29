@@ -9,6 +9,7 @@ import (
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/button"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/cmd"
 )
 
 func (p *processor) ProcessMessage(ctx context.Context, msg *tgbotapi.Message) error {
@@ -54,7 +55,7 @@ func (p *processor) processReplace(ctx context.Context, chatID string, msg *tgbo
 
 func viewOriginMsgButton(msg string) []tgbotapi.InlineKeyboardButton {
 	buttonInfo, err := button.ButtonCMDInfo{
-		CMD:     "viewOriginMsg",
+		CMD:     cmd.ViewOrginMsg.String(),
 		Payload: []byte(msg),
 	}.ToBase64()
 
