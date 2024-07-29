@@ -9,6 +9,7 @@ import (
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/button"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/cmd"
 )
 
 func (p *processor) ProcessCallbackQuery(ctx context.Context, query *tgbotapi.CallbackQuery) error {
@@ -20,7 +21,7 @@ func (p *processor) ProcessCallbackQuery(ctx context.Context, query *tgbotapi.Ca
 		return fmt.Errorf("decode base64 data: %w", err)
 	}
 
-	r, ok := p.buttonsRouter[buttonInfo.CMD]
+	r, ok := p.buttonsRouter[cmd.CMD(buttonInfo.CMD)]
 	if !ok {
 		return fmt.Errorf("unsupported command %s", buttonInfo.CMD)
 	}

@@ -64,19 +64,19 @@ func New(
 
 func (p *processor) initCommandRoutes() {
 	p.cmdRouter = cmd.Router{
-		"getall": {
+		cmd.GetAll: {
 			Handler: p.GetAllWords,
 			Perm:    cmd.Admin,
 		},
 	}
 
 	if p.wordsUpdater != nil {
-		p.cmdRouter["add"] = cmd.Route{
+		p.cmdRouter[cmd.Add] = cmd.Route{
 			Handler: p.AddWordCommand,
 			Perm:    cmd.Admin,
 		}
 
-		p.cmdRouter["remove"] = cmd.Route{
+		p.cmdRouter[cmd.Remove] = cmd.Route{
 			Handler: p.RemoveWordCommand,
 			Perm:    cmd.Admin,
 		}
@@ -89,15 +89,15 @@ func (p *processor) initButtonsRoutes() {
 	}
 
 	p.buttonsRouter = cmd.Router{
-		"add": {
+		cmd.Add: {
 			Handler: p.AddWordCallbackQuery,
 			Perm:    cmd.Admin,
 		},
-		"remove": {
+		cmd.Remove: {
 			Handler: p.RemoveWordCallbackQuery,
 			Perm:    cmd.Admin,
 		},
-		"viewOriginMsg": {
+		cmd.ViewOrginMsg: {
 			Handler: p.ViewOriginMsgCallbackQuery,
 			Perm:    cmd.Admin,
 		},
