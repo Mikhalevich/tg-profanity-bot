@@ -13,11 +13,11 @@ import (
 
 func (p *processor) AddWordCommand(ctx context.Context, chatID string, cmdArgs string, msg *tgbotapi.Message) error {
 	word := strings.TrimSpace(cmdArgs)
-	return p.addWord(ctx, chatID, word, msg, revertButton(cmd.Remove, word))
+	return p.addWord(ctx, chatID, word, msg, p.revertButton(ctx, cmd.Remove, word))
 }
 
 func (p *processor) AddWordCallbackQuery(ctx context.Context, chatID string, word string, msg *tgbotapi.Message) error {
-	return p.addWord(ctx, chatID, word, msg)
+	return p.addWord(ctx, chatID, word, msg, nil)
 }
 
 func (p *processor) addWord(
@@ -25,7 +25,7 @@ func (p *processor) addWord(
 	chatID string,
 	word string,
 	msg *tgbotapi.Message,
-	buttons ...[]tgbotapi.InlineKeyboardButton,
+	buttons []tgbotapi.InlineKeyboardButton,
 ) error {
 	if err := p.wordsUpdater.AddWord(ctx, chatID, word); err != nil {
 		if !p.wordsUpdater.IsNothingUpdatedError(err) {

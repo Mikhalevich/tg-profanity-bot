@@ -24,7 +24,7 @@ func (s *msgsender) Edit(
 	ctx context.Context,
 	originMsg *tgbotapi.Message,
 	msg string,
-	buttons ...[]tgbotapi.InlineKeyboardButton,
+	buttons ...tgbotapi.InlineKeyboardButton,
 ) error {
 	_, span := tracing.StartSpan(ctx)
 	defer span.End()
@@ -34,7 +34,7 @@ func (s *msgsender) Edit(
 	// disabled due to api delete error
 	s.api.Send(deletedMsg)
 
-	if _, err := s.api.Send(newEditedMessage(originMsg, msg, buttons...)); err != nil {
+	if _, err := s.api.Send(newEditedMessage(originMsg, msg, buttons)); err != nil {
 		return fmt.Errorf("send new: %w", err)
 	}
 
@@ -44,7 +44,7 @@ func (s *msgsender) Edit(
 func newEditedMessage(
 	originMsg *tgbotapi.Message,
 	msgText string,
-	buttons ...[]tgbotapi.InlineKeyboardButton,
+	buttons []tgbotapi.InlineKeyboardButton,
 ) *tgbotapi.MessageConfig {
 	formattedMsgText, msgEntities := formatMessage(msgText, originMsg.From)
 
@@ -52,7 +52,7 @@ func newEditedMessage(
 	newMsg.Entities = msgEntities
 
 	if len(buttons) > 0 {
-		newMsg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(buttons...)
+		newMsg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(buttons)
 	}
 
 	if originMsg.ReplyToMessage != nil {

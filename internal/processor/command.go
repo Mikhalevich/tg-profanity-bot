@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/google/uuid"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/button"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/cmd"
 )
 
@@ -62,17 +62,22 @@ func (p *processor) GetAllWords(ctx context.Context, chatID string, cmdArgs stri
 	return nil
 }
 
-func revertButton(command cmd.CMD, word string) []tgbotapi.InlineKeyboardButton {
-	buttonInfo, err := button.ButtonCMDInfo{
-		CMD:     command.String(),
-		Payload: []byte(word),
-	}.ToBase64()
+func (p *processor) makeButton(ctx context.Context, caption string, command Command) []tgbotapi.InlineKeyboardButton {
+	id := uuid.NewString()
 
-	if err != nil {
+	if err := p.commandStorage.Set(ctx, id, command); err != nil {
+		// skip error
 		return nil
 	}
 
 	return tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("revert", buttonInfo),
+		tgbotapi.NewInlineKeyboardButtonData(caption, id),
 	)
+}
+
+func (p *processor) revertButton(ctx context.Context, command cmd.CMD, word string) []tgbotapi.InlineKeyboardButton {
+	return p.makeButton(ctx, "revert", Command{
+		CMD:     command.String(),
+		Payload: []byte(word),
+	})
 }

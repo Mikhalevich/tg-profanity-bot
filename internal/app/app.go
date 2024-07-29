@@ -12,6 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/uptrace/opentelemetry-go-extra/otelsql"
 
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/commandstorage"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/memberapi"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/msgsender"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity"
@@ -69,7 +70,14 @@ func MakeMsgProcessor(
 		wordsUpdater      = makeWordsUpdaterFromPG(pg)
 	)
 
-	return processor.New(replacer, msgSender, wordsProvider, wordsUpdater, chatMemberChecker), cleanup, nil
+	return processor.New(
+		replacer,
+		msgSender,
+		wordsProvider,
+		wordsUpdater,
+		chatMemberChecker,
+		commandstorage.NewNope(),
+	), cleanup, nil
 }
 
 func newBotAPI(token string) (*tgbotapi.BotAPI, error) {

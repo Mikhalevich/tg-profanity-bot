@@ -13,7 +13,7 @@ func (s *msgsender) Reply(
 	ctx context.Context,
 	originMsg *tgbotapi.Message,
 	msg string,
-	buttons ...[]tgbotapi.InlineKeyboardButton,
+	buttons ...tgbotapi.InlineKeyboardButton,
 ) error {
 	_, span := tracing.StartSpan(ctx)
 	defer span.End()
@@ -22,7 +22,7 @@ func (s *msgsender) Reply(
 	newMsg.ReplyToMessageID = originMsg.MessageID
 
 	if len(buttons) > 0 {
-		newMsg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(buttons...)
+		newMsg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(buttons)
 	}
 
 	if _, err := s.api.Send(newMsg); err != nil {

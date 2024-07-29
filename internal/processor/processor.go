@@ -13,8 +13,8 @@ type TextReplacer interface {
 }
 
 type MsgSender interface {
-	Reply(ctx context.Context, originMsg *tgbotapi.Message, msg string, buttons ...[]tgbotapi.InlineKeyboardButton) error
-	Edit(ctx context.Context, originMsg *tgbotapi.Message, msg string, buttons ...[]tgbotapi.InlineKeyboardButton) error
+	Reply(ctx context.Context, originMsg *tgbotapi.Message, msg string, buttons ...tgbotapi.InlineKeyboardButton) error
+	Edit(ctx context.Context, originMsg *tgbotapi.Message, msg string, buttons ...tgbotapi.InlineKeyboardButton) error
 }
 
 type WordsProvider interface {
@@ -31,12 +31,25 @@ type ChatMemberChecker interface {
 	IsAdmin(chatID, userID int64) bool
 }
 
+type Command struct {
+	CMD     string
+	Payload []byte
+}
+
+type CommandStorage interface {
+	Set(ctx context.Context, id string, command Command) error
+	Get(ctx context.Context, id string) (Command, error)
+	IsNotFoundError(err error) bool
+}
+
 type processor struct {
-	replacer      TextReplacer
-	msgSender     MsgSender
-	wordsProvider WordsProvider
-	wordsUpdater  WordsUpdater
-	memberChecker ChatMemberChecker
+	replacer       TextReplacer
+	msgSender      MsgSender
+	wordsProvider  WordsProvider
+	wordsUpdater   WordsUpdater
+	memberChecker  ChatMemberChecker
+	commandStorage CommandStorage
+
 	cmdRouter     cmd.Router
 	buttonsRouter cmd.Router
 }
@@ -47,13 +60,15 @@ func New(
 	wordsProvider WordsProvider,
 	wordsUpdater WordsUpdater,
 	memberChecker ChatMemberChecker,
+	commandStorage CommandStorage,
 ) *processor {
 	p := &processor{
-		replacer:      replacer,
-		msgSender:     msgSender,
-		wordsProvider: wordsProvider,
-		wordsUpdater:  wordsUpdater,
-		memberChecker: memberChecker,
+		replacer:       replacer,
+		msgSender:      msgSender,
+		wordsProvider:  wordsProvider,
+		wordsUpdater:   wordsUpdater,
+		memberChecker:  memberChecker,
+		commandStorage: commandStorage,
 	}
 
 	p.initCommandRoutes()

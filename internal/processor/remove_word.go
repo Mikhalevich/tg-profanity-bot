@@ -18,7 +18,7 @@ func (p *processor) RemoveWordCommand(
 	msg *tgbotapi.Message,
 ) error {
 	word := strings.TrimSpace(cmdArgs)
-	return p.removeWord(ctx, chatID, word, msg, revertButton(cmd.Add, word))
+	return p.removeWord(ctx, chatID, word, msg, p.revertButton(ctx, cmd.Add, word))
 }
 
 func (p *processor) RemoveWordCallbackQuery(
@@ -27,7 +27,7 @@ func (p *processor) RemoveWordCallbackQuery(
 	word string,
 	msg *tgbotapi.Message,
 ) error {
-	return p.removeWord(ctx, chatID, word, msg)
+	return p.removeWord(ctx, chatID, word, msg, nil)
 }
 
 func (p *processor) removeWord(
@@ -35,7 +35,7 @@ func (p *processor) removeWord(
 	chatID string,
 	word string,
 	msg *tgbotapi.Message,
-	buttons ...[]tgbotapi.InlineKeyboardButton,
+	buttons []tgbotapi.InlineKeyboardButton,
 ) error {
 	if err := p.wordsUpdater.RemoveWord(ctx, chatID, word); err != nil {
 		if !p.wordsUpdater.IsNothingUpdatedError(err) {
