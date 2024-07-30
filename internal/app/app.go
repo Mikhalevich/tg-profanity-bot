@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -70,8 +71,12 @@ func MakeMsgProcessor(
 		chatMemberChecker = memberapi.New(api)
 		wordsProvider     = makeWordsProviderFromPG(pg, words)
 		wordsUpdater      = makeWordsUpdaterFromPG(pg)
-		commandStorage    = makeCommandStorage(commandStorageCfg)
 	)
+
+	commandStorage, err := makeCommandStorage(commandStorageCfg)
+	if err != nil {
+		return nil, nil, fmt.Errorf("command storage: %w", err)
+	}
 
 	return processor.New(
 		replacer,
@@ -129,9 +134,9 @@ func InitPostgres(cfg config.Postgres) (*postgres.Postgres, func(), error) {
 	}, nil
 }
 
-func makeCommandStorage(cfg config.CommandRedis) processor.CommandStorage {
+func makeCommandStorage(cfg config.CommandRedis) (processor.CommandStorage, error) {
 	if cfg.Addr == "" {
-		return commandstorage.NewNope()
+		return commandstorage.NewNope(), nil
 	}
 
 	rdb := redis.NewClient(&redis.Options{
@@ -140,7 +145,11 @@ func makeCommandStorage(cfg config.CommandRedis) processor.CommandStorage {
 		DB:       cfg.DB,
 	})
 
-	return commandstorage.NewRedis(rdb, cfg.TTL)
+	if err := rdb.Ping(context.Background()).Err(); err != nil {
+		return nil, fmt.Errorf("redis ping: %w", err)
+	}
+
+	return commandstorage.NewRedis(rdb, cfg.TTL), nil
 }
 
 // MakeRabbitAMQPChannel make rabbitmq channel and returns channel itself, clearing func and error.
