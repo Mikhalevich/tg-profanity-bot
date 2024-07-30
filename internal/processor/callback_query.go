@@ -17,13 +17,13 @@ func (p *processor) ProcessCallbackQuery(ctx context.Context, query *tgbotapi.Ca
 
 	command, err := p.commandStorage.Get(ctx, query.Data)
 	if err != nil {
-		if p.commandStorage.IsNotFoundError(err) {
-			if err := p.msgSender.Reply(ctx, query.Message, "command expired"); err != nil {
-				return fmt.Errorf("send command expired: %w", err)
-			}
+		if !p.commandStorage.IsNotFoundError(err) {
+			return fmt.Errorf("get command from store: %w", err)
 		}
 
-		return fmt.Errorf("get command from store: %w", err)
+		if err := p.msgSender.Reply(ctx, query.Message, "command expired"); err != nil {
+			return fmt.Errorf("send command expired: %w", err)
+		}
 	}
 
 	r, ok := p.buttonsRouter[cmd.CMD(command.CMD)]

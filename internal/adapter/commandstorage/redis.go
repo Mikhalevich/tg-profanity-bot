@@ -28,7 +28,7 @@ func NewRedis(client *redis.Client, ttl time.Duration) *redisStorage {
 func (r *redisStorage) Set(ctx context.Context, id string, command processor.Command) error {
 	var buf bytes.Buffer
 	if err := gob.NewEncoder(&buf).Encode(command); err != nil {
-		return fmt.Errorf("gob endcode: %w", err)
+		return fmt.Errorf("gob encode: %w", err)
 	}
 
 	if err := r.client.Set(ctx, id, buf.Bytes(), r.ttl).Err(); err != nil {
