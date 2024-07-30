@@ -10,6 +10,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jinzhu/configor"
 	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/redis/go-redis/extra/redisotel/v9"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"github.com/uptrace/opentelemetry-go-extra/otelsql"
@@ -144,6 +145,10 @@ func makeCommandStorage(cfg config.CommandRedis) (processor.CommandStorage, erro
 		Password: cfg.Pwd,
 		DB:       cfg.DB,
 	})
+
+	if err := redisotel.InstrumentTracing(rdb); err != nil {
+		return nil, fmt.Errorf("redis instrument tracing: %w", err)
+	}
 
 	if err := rdb.Ping(context.Background()).Err(); err != nil {
 		return nil, fmt.Errorf("redis ping: %w", err)
