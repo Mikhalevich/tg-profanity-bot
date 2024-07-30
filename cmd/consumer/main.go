@@ -39,7 +39,7 @@ func runService(cfg config.Consumer, logger *logrus.Logger) error {
 		return fmt.Errorf("setup tracer: %w", err)
 	}
 
-	msgProcessor, cleanup, err := app.MakeMsgProcessor(cfg.BotToken, cfg.Postgres, cfg.Profanity)
+	msgProcessor, cleanup, err := app.MakeMsgProcessor(cfg.BotToken, cfg.Postgres, cfg.Profanity, cfg.CommandRedis)
 	if err != nil {
 		return fmt.Errorf("init msg processor: %w", err)
 	}

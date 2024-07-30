@@ -7,6 +7,8 @@ services:
     depends_on:
       sql-migrate:
         condition: service_completed_successfully
+      redis:
+        condition: service_healthy
     networks:
       - bot-net
   jaeger:
@@ -40,6 +42,19 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - bot-net
+  redis:
+    image: redis:7.0.15
+    ports:
+      - 6379:6379
+    environment:
+      - REDIS_PASSWORD=redis123
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 2s
+      timeout: 2s
+      retries: 10
     networks:
       - bot-net
 networks:

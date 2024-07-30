@@ -9,6 +9,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jinzhu/configor"
 	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"github.com/uptrace/opentelemetry-go-extra/otelsql"
 
@@ -45,6 +46,7 @@ func MakeMsgProcessor(
 	botToken string,
 	pgCfg config.Postgres,
 	profanityCfg config.Profanity,
+	commandStorageCfg config.CommandRedis,
 ) (bot.MessageProcessor, func(), error) {
 	pg, cleanup, err := InitPostgres(pgCfg)
 	if err != nil {
@@ -68,6 +70,7 @@ func MakeMsgProcessor(
 		chatMemberChecker = memberapi.New(api)
 		wordsProvider     = makeWordsProviderFromPG(pg, words)
 		wordsUpdater      = makeWordsUpdaterFromPG(pg)
+		commandStorage    = makeCommandStorage(commandStorageCfg)
 	)
 
 	return processor.New(
@@ -76,7 +79,7 @@ func MakeMsgProcessor(
 		wordsProvider,
 		wordsUpdater,
 		chatMemberChecker,
-		commandstorage.NewNope(),
+		commandStorage,
 	), cleanup, nil
 }
 
@@ -124,6 +127,20 @@ func InitPostgres(cfg config.Postgres) (*postgres.Postgres, func(), error) {
 	return p, func() {
 		db.Close()
 	}, nil
+}
+
+func makeCommandStorage(cfg config.CommandRedis) processor.CommandStorage {
+	if cfg.Addr == "" {
+		return commandstorage.NewNope()
+	}
+
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     cfg.Addr,
+		Password: cfg.Pwd,
+		DB:       cfg.DB,
+	})
+
+	return commandstorage.NewRedis(rdb, cfg.TTL)
 }
 
 // MakeRabbitAMQPChannel make rabbitmq channel and returns channel itself, clearing func and error.

@@ -40,7 +40,13 @@ func runService(cfg config.Bot, logger *logrus.Logger) error {
 		return fmt.Errorf("setup tracer: %w", err)
 	}
 
-	msgProcessor, cleanup, err := makeProcessor(cfg.Rabbit, cfg.Postgres, cfg.Profanity, cfg.Updates.Token)
+	msgProcessor, cleanup, err := makeProcessor(
+		cfg.Rabbit,
+		cfg.Postgres,
+		cfg.Profanity,
+		cfg.CommandRedis,
+		cfg.Updates.Token,
+	)
 	if err != nil {
 		return fmt.Errorf("init processor: %w", err)
 	}
@@ -85,6 +91,7 @@ func makeProcessor(
 	rabbitCfg config.RabbitMQProducer,
 	postgresCfg config.Postgres,
 	profanityCfg config.Profanity,
+	commandRedisCfg config.CommandRedis,
 	botToken string,
 ) (bot.MessageProcessor, func(), error) {
 	if rabbitCfg.URL != "" {
@@ -96,7 +103,7 @@ func makeProcessor(
 		return msgPublisher, cleanup, nil
 	}
 
-	msgProcessor, cleanup, err := app.MakeMsgProcessor(botToken, postgresCfg, profanityCfg)
+	msgProcessor, cleanup, err := app.MakeMsgProcessor(botToken, postgresCfg, profanityCfg, commandRedisCfg)
 	if err != nil {
 		return nil, nil, fmt.Errorf("msg processor: %w", err)
 	}

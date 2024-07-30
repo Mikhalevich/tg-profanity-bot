@@ -14,4 +14,9 @@ rabbit:
   workers_count: 10
 postgres:
   connection: "host=postgres port=5432 user=bot password=bot dbname=bot sslmode=disable"
+command_redis:
+  addr: "redis:6379"
+  pwd: "redis123"
+  db: 0
+  ttl: 5m
 
