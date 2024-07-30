@@ -22,4 +22,4 @@ func (r Route) IsAdmin() bool {
 	return r.Perm == Admin
 }
 
-type Router map[string]Route
+type Router map[CMD]Route

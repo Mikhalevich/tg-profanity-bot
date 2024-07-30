@@ -17,6 +17,9 @@ github.com/Nvveen/Gotty
 # github.com/cenkalti/backoff/v4 v4.3.0
 ## explicit; go 1.18
 github.com/cenkalti/backoff/v4
+# github.com/cespare/xxhash/v2 v2.2.0
+## explicit; go 1.11
+github.com/cespare/xxhash/v2
 # github.com/cloudflare/ahocorasick v0.0.0-20210425175752-730270c3e184
 ## explicit
 github.com/cloudflare/ahocorasick
@@ -26,6 +29,9 @@ github.com/containerd/continuity/pathdriver
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew
+# github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f
+## explicit
+github.com/dgryski/go-rendezvous
 # github.com/docker/cli v20.10.17+incompatible
 ## explicit
 github.com/docker/cli/cli/compose/interpolation
@@ -72,6 +78,9 @@ github.com/gogo/protobuf/proto
 # github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 ## explicit; go 1.13
 github.com/google/shlex
+# github.com/google/uuid v1.6.0
+## explicit
+github.com/google/uuid
 # github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0
 ## explicit; go 1.20
 github.com/grpc-ecosystem/grpc-gateway/v2/internal/httprule
@@ -162,6 +171,22 @@ github.com/pmezard/go-difflib/difflib
 # github.com/rabbitmq/amqp091-go v1.10.0
 ## explicit; go 1.20
 github.com/rabbitmq/amqp091-go
+# github.com/redis/go-redis/extra/rediscmd/v9 v9.5.3
+## explicit; go 1.19
+github.com/redis/go-redis/extra/rediscmd/v9
+# github.com/redis/go-redis/extra/redisotel/v9 v9.5.3
+## explicit; go 1.19
+github.com/redis/go-redis/extra/redisotel/v9
+# github.com/redis/go-redis/v9 v9.6.1
+## explicit; go 1.18
+github.com/redis/go-redis/v9
+github.com/redis/go-redis/v9/internal
+github.com/redis/go-redis/v9/internal/hashtag
+github.com/redis/go-redis/v9/internal/hscan
+github.com/redis/go-redis/v9/internal/pool
+github.com/redis/go-redis/v9/internal/proto
+github.com/redis/go-redis/v9/internal/rand
+github.com/redis/go-redis/v9/internal/util
 # github.com/rubenv/sql-migrate v1.6.1
 ## explicit; go 1.21
 github.com/rubenv/sql-migrate
@@ -199,6 +224,7 @@ go.opentelemetry.io/otel/internal/global
 go.opentelemetry.io/otel/propagation
 go.opentelemetry.io/otel/semconv/internal
 go.opentelemetry.io/otel/semconv/v1.10.0
+go.opentelemetry.io/otel/semconv/v1.24.0
 go.opentelemetry.io/otel/semconv/v1.25.0
 # go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.27.0
 ## explicit; go 1.21

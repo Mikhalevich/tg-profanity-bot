@@ -8,21 +8,27 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/button"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/cmd"
 )
 
 func (p *processor) ProcessCallbackQuery(ctx context.Context, query *tgbotapi.CallbackQuery) error {
 	ctx, span := tracing.StartSpan(ctx)
 	defer span.End()
 
-	buttonInfo, err := button.FromBase64(query.Data)
+	command, err := p.commandStorage.Get(ctx, query.Data)
 	if err != nil {
-		return fmt.Errorf("decode base64 data: %w", err)
+		if !p.commandStorage.IsNotFoundError(err) {
+			return fmt.Errorf("get command from store: %w", err)
+		}
+
+		if err := p.msgSender.Reply(ctx, query.Message, "command expired"); err != nil {
+			return fmt.Errorf("send command expired: %w", err)
+		}
 	}
 
-	r, ok := p.buttonsRouter[buttonInfo.CMD]
+	r, ok := p.buttonsRouter[cmd.CMD(command.CMD)]
 	if !ok {
-		return fmt.Errorf("unsupported command %s", buttonInfo.CMD)
+		return fmt.Errorf("unsupported command %s", command.CMD)
 	}
 
 	if r.IsAdmin() && !p.memberChecker.IsAdmin(query.Message.Chat.ID, query.From.ID) {
@@ -33,8 +39,13 @@ func (p *processor) ProcessCallbackQuery(ctx context.Context, query *tgbotapi.Ca
 		return nil
 	}
 
-	if err := r.Handler(ctx, strconv.FormatInt(query.Message.Chat.ID, 10), buttonInfo.Word, query.Message); err != nil {
-		return fmt.Errorf("handle query %s: %w", buttonInfo.CMD, err)
+	var (
+		chatID  = strconv.FormatInt(query.Message.Chat.ID, 10)
+		payload = string(command.Payload)
+	)
+
+	if err := r.Handler(ctx, chatID, payload, query.Message); err != nil {
+		return fmt.Errorf("handle query %s: %w", command.CMD, err)
 	}
 
 	return nil

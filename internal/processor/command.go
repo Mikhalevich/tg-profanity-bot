@@ -6,18 +6,19 @@ import (
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/google/uuid"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/button"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/cmd"
 )
 
 func (p *processor) tryProcessCommand(ctx context.Context, chatID string, msg *tgbotapi.Message) (bool, error) {
-	cmd, args := extractCommand(msg.Text)
-	if cmd == "" {
+	command, args := extractCommand(msg.Text)
+	if command == "" {
 		return false, nil
 	}
 
-	r, ok := p.cmdRouter[cmd]
+	r, ok := p.cmdRouter[command]
 	if !ok {
 		return false, nil
 	}
@@ -32,20 +33,20 @@ func (p *processor) tryProcessCommand(ctx context.Context, chatID string, msg *t
 	}
 
 	if err := r.Handler(ctx, chatID, args, msg); err != nil {
-		return false, fmt.Errorf("handle command %s: %w", cmd, err)
+		return false, fmt.Errorf("handle command %s: %w", command.String(), err)
 	}
 
 	return true, nil
 }
 
-func extractCommand(msg string) (string, string) {
+func extractCommand(msg string) (cmd.CMD, string) {
 	if !strings.HasPrefix(msg, "/") {
 		return "", ""
 	}
 
-	cmd, args, _ := strings.Cut(msg[1:], " ")
+	command, args, _ := strings.Cut(msg[1:], " ")
 
-	return cmd, args
+	return cmd.CMD(command), args
 }
 
 func (p *processor) GetAllWords(ctx context.Context, chatID string, cmdArgs string, msg *tgbotapi.Message) error {
@@ -61,17 +62,22 @@ func (p *processor) GetAllWords(ctx context.Context, chatID string, cmdArgs stri
 	return nil
 }
 
-func makeRevertButton(cmd, word string) []tgbotapi.InlineKeyboardButton {
-	buttonInfo, err := button.ButtonCMDInfo{
-		CMD:  cmd,
-		Word: word,
-	}.ToBase64()
+func (p *processor) makeButton(ctx context.Context, caption string, command Command) []tgbotapi.InlineKeyboardButton {
+	id := uuid.NewString()
 
-	if err != nil {
+	if err := p.commandStorage.Set(ctx, id, command); err != nil {
+		// skip error
 		return nil
 	}
 
 	return tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("revert", buttonInfo),
+		tgbotapi.NewInlineKeyboardButtonData(caption, id),
 	)
+}
+
+func (p *processor) revertButton(ctx context.Context, command cmd.CMD, word string) []tgbotapi.InlineKeyboardButton {
+	return p.makeButton(ctx, "revert", Command{
+		CMD:     command.String(),
+		Payload: []byte(word),
+	})
 }

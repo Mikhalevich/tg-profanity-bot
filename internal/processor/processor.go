@@ -13,8 +13,8 @@ type TextReplacer interface {
 }
 
 type MsgSender interface {
-	Reply(ctx context.Context, originMsg *tgbotapi.Message, msg string, buttons ...[]tgbotapi.InlineKeyboardButton) error
-	Edit(ctx context.Context, originMsg *tgbotapi.Message, msg string) error
+	Reply(ctx context.Context, originMsg *tgbotapi.Message, msg string, buttons ...tgbotapi.InlineKeyboardButton) error
+	Edit(ctx context.Context, originMsg *tgbotapi.Message, msg string, buttons ...tgbotapi.InlineKeyboardButton) error
 }
 
 type WordsProvider interface {
@@ -31,12 +31,25 @@ type ChatMemberChecker interface {
 	IsAdmin(chatID, userID int64) bool
 }
 
+type Command struct {
+	CMD     string
+	Payload []byte
+}
+
+type CommandStorage interface {
+	Set(ctx context.Context, id string, command Command) error
+	Get(ctx context.Context, id string) (Command, error)
+	IsNotFoundError(err error) bool
+}
+
 type processor struct {
-	replacer      TextReplacer
-	msgSender     MsgSender
-	wordsProvider WordsProvider
-	wordsUpdater  WordsUpdater
-	memberChecker ChatMemberChecker
+	replacer       TextReplacer
+	msgSender      MsgSender
+	wordsProvider  WordsProvider
+	wordsUpdater   WordsUpdater
+	memberChecker  ChatMemberChecker
+	commandStorage CommandStorage
+
 	cmdRouter     cmd.Router
 	buttonsRouter cmd.Router
 }
@@ -47,13 +60,15 @@ func New(
 	wordsProvider WordsProvider,
 	wordsUpdater WordsUpdater,
 	memberChecker ChatMemberChecker,
+	commandStorage CommandStorage,
 ) *processor {
 	p := &processor{
-		replacer:      replacer,
-		msgSender:     msgSender,
-		wordsProvider: wordsProvider,
-		wordsUpdater:  wordsUpdater,
-		memberChecker: memberChecker,
+		replacer:       replacer,
+		msgSender:      msgSender,
+		wordsProvider:  wordsProvider,
+		wordsUpdater:   wordsUpdater,
+		memberChecker:  memberChecker,
+		commandStorage: commandStorage,
 	}
 
 	p.initCommandRoutes()
@@ -64,19 +79,19 @@ func New(
 
 func (p *processor) initCommandRoutes() {
 	p.cmdRouter = cmd.Router{
-		"getall": {
+		cmd.GetAll: {
 			Handler: p.GetAllWords,
 			Perm:    cmd.Admin,
 		},
 	}
 
 	if p.wordsUpdater != nil {
-		p.cmdRouter["add"] = cmd.Route{
+		p.cmdRouter[cmd.Add] = cmd.Route{
 			Handler: p.AddWordCommand,
 			Perm:    cmd.Admin,
 		}
 
-		p.cmdRouter["remove"] = cmd.Route{
+		p.cmdRouter[cmd.Remove] = cmd.Route{
 			Handler: p.RemoveWordCommand,
 			Perm:    cmd.Admin,
 		}
@@ -89,12 +104,16 @@ func (p *processor) initButtonsRoutes() {
 	}
 
 	p.buttonsRouter = cmd.Router{
-		"add": {
+		cmd.Add: {
 			Handler: p.AddWordCallbackQuery,
 			Perm:    cmd.Admin,
 		},
-		"remove": {
+		cmd.Remove: {
 			Handler: p.RemoveWordCallbackQuery,
+			Perm:    cmd.Admin,
+		},
+		cmd.ViewOrginMsg: {
+			Handler: p.ViewOriginMsgCallbackQuery,
 			Perm:    cmd.Admin,
 		},
 	}
