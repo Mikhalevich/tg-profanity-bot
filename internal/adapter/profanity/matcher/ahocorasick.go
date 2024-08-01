@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/cloudflare/ahocorasick"
+
+	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 )
 
 type ahocorasickMatcher struct {
@@ -19,6 +21,9 @@ func NewAhocorasick(words []string) *ahocorasickMatcher {
 }
 
 func (am *ahocorasickMatcher) Match(ctx context.Context, chatID string, in []byte) ([]string, error) {
+	_, span := tracing.StartSpan(ctx)
+	defer span.End()
+
 	wordsIdx := am.m.Match(in)
 	if len(wordsIdx) == 0 {
 		return nil, nil

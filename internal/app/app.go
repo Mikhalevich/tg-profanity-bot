@@ -16,8 +16,8 @@ import (
 	"github.com/uptrace/opentelemetry-go-extra/otelsql"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/commandstorage"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/memberapi"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/msgsender"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/permissionchecker"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/matcher"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/replacer"
@@ -67,13 +67,6 @@ func MakeMsgProcessor(
 		return nil, nil, fmt.Errorf("create bot api: %w", err)
 	}
 
-	var (
-		msgSender         = msgsender.New(api)
-		chatMemberChecker = memberapi.New(api)
-		wordsProvider     = makeWordsProviderFromPG(pg, words)
-		wordsUpdater      = makeWordsUpdaterFromPG(pg)
-	)
-
 	commandStorage, err := makeCommandStorage(commandStorageCfg)
 	if err != nil {
 		return nil, nil, fmt.Errorf("command storage: %w", err)
@@ -81,10 +74,10 @@ func MakeMsgProcessor(
 
 	return processor.New(
 		replacer,
-		msgSender,
-		wordsProvider,
-		wordsUpdater,
-		chatMemberChecker,
+		msgsender.New(api),
+		makeWordsProviderFromPG(pg, words),
+		makeWordsUpdaterFromPG(pg),
+		permissionchecker.New(api),
 		commandStorage,
 	), cleanup, nil
 }

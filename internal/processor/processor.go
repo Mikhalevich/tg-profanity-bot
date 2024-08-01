@@ -27,8 +27,8 @@ type WordsUpdater interface {
 	IsNothingUpdatedError(err error) bool
 }
 
-type ChatMemberChecker interface {
-	IsAdmin(chatID, userID int64) bool
+type PermissionChecker interface {
+	IsAdmin(ctx context.Context, chatID, userID int64) bool
 }
 
 type Command struct {
@@ -43,12 +43,12 @@ type CommandStorage interface {
 }
 
 type processor struct {
-	replacer       TextReplacer
-	msgSender      MsgSender
-	wordsProvider  WordsProvider
-	wordsUpdater   WordsUpdater
-	memberChecker  ChatMemberChecker
-	commandStorage CommandStorage
+	replacer          TextReplacer
+	msgSender         MsgSender
+	wordsProvider     WordsProvider
+	wordsUpdater      WordsUpdater
+	permissionChecker PermissionChecker
+	commandStorage    CommandStorage
 
 	cmdRouter     cmd.Router
 	buttonsRouter cmd.Router
@@ -59,16 +59,16 @@ func New(
 	msgSender MsgSender,
 	wordsProvider WordsProvider,
 	wordsUpdater WordsUpdater,
-	memberChecker ChatMemberChecker,
+	permissionChecker PermissionChecker,
 	commandStorage CommandStorage,
 ) *processor {
 	p := &processor{
-		replacer:       replacer,
-		msgSender:      msgSender,
-		wordsProvider:  wordsProvider,
-		wordsUpdater:   wordsUpdater,
-		memberChecker:  memberChecker,
-		commandStorage: commandStorage,
+		replacer:          replacer,
+		msgSender:         msgSender,
+		wordsProvider:     wordsProvider,
+		wordsUpdater:      wordsUpdater,
+		permissionChecker: permissionChecker,
+		commandStorage:    commandStorage,
 	}
 
 	p.initCommandRoutes()

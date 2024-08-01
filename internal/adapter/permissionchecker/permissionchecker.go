@@ -1,8 +1,12 @@
-package memberapi
+package permissionchecker
 
 import (
+	"context"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
+
+	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 )
 
 type memberapi struct {
@@ -15,7 +19,10 @@ func New(api *tgbotapi.BotAPI) *memberapi {
 	}
 }
 
-func (m *memberapi) IsAdmin(chatID, userID int64) bool {
+func (m *memberapi) IsAdmin(ctx context.Context, chatID, userID int64) bool {
+	_, span := tracing.StartSpan(ctx)
+	defer span.End()
+
 	chat, err := m.api.GetChat(tgbotapi.ChatInfoConfig{
 		ChatConfig: tgbotapi.ChatConfig{
 			ChatID: chatID,

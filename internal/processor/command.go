@@ -27,7 +27,7 @@ func (p *processor) tryProcessCommand(ctx context.Context, chatID string, msg *t
 	defer span.End()
 
 	if r.IsAdmin() {
-		if !p.memberChecker.IsAdmin(msg.Chat.ID, msg.From.ID) {
+		if !p.permissionChecker.IsAdmin(ctx, msg.Chat.ID, msg.From.ID) {
 			return false, nil
 		}
 	}

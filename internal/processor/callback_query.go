@@ -31,7 +31,7 @@ func (p *processor) ProcessCallbackQuery(ctx context.Context, query *tgbotapi.Ca
 		return fmt.Errorf("unsupported command %s", command.CMD)
 	}
 
-	if r.IsAdmin() && !p.memberChecker.IsAdmin(query.Message.Chat.ID, query.From.ID) {
+	if r.IsAdmin() && !p.permissionChecker.IsAdmin(ctx, query.Message.Chat.ID, query.From.ID) {
 		if err := p.msgSender.Reply(ctx, query.Message, "need admin permission"); err != nil {
 			return fmt.Errorf("send perm message: %w", err)
 		}
