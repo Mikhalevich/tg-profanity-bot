@@ -15,6 +15,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/uptrace/opentelemetry-go-extra/otelsql"
 
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/banprocessor"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/commandstorage"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/msgsender"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/permissionchecker"
@@ -79,6 +80,7 @@ func MakeMsgProcessor(
 		makeWordsUpdaterFromPG(pg),
 		permissionchecker.New(api),
 		commandStorage,
+		banprocessor.NewNope(),
 	), cleanup, nil
 }
 

@@ -17,7 +17,16 @@ func (p *processor) ProcessMessage(ctx context.Context, msg *tgbotapi.Message) e
 
 	var (
 		chatID = strconv.FormatInt(msg.Chat.ID, 10)
+		userID = strconv.FormatInt(msg.From.ID, 10)
 	)
+
+	if p.banProcessor.IsBanned(ctx, makeBanID(chatID, userID)) {
+		if err := p.processBan(ctx, chatID, msg); err != nil {
+			return fmt.Errorf("process ban: %w", err)
+		}
+
+		return nil
+	}
 
 	isProcessed, err := p.tryProcessCommand(ctx, chatID, msg)
 	if err != nil {
@@ -28,14 +37,18 @@ func (p *processor) ProcessMessage(ctx context.Context, msg *tgbotapi.Message) e
 		return nil
 	}
 
-	if err := p.processReplace(ctx, chatID, msg); err != nil {
+	if err := p.processReplace(ctx, chatID, userID, msg); err != nil {
 		return fmt.Errorf("process replace: %w", err)
 	}
 
 	return nil
 }
 
-func (p *processor) processReplace(ctx context.Context, chatID string, msg *tgbotapi.Message) error {
+func makeBanID(chatID, userID string) string {
+	return fmt.Sprintf("%s:%s", chatID, userID)
+}
+
+func (p *processor) processReplace(ctx context.Context, chatID, userID string, msg *tgbotapi.Message) error {
 	mangledMsg, err := p.replacer.Replace(ctx, chatID, msg.Text)
 	if err != nil {
 		return fmt.Errorf("replace msg: %w", err)
@@ -49,6 +62,10 @@ func (p *processor) processReplace(ctx context.Context, chatID string, msg *tgbo
 		return fmt.Errorf("msg edit: %w", err)
 	}
 
+	if err := p.banProcessor.AddViolation(ctx, makeBanID(chatID, userID)); err != nil {
+		return fmt.Errorf("add violation: %w", err)
+	}
+
 	return nil
 }
 
@@ -57,4 +74,17 @@ func (p *processor) viewOriginMsgButton(ctx context.Context, msg string) []tgbot
 		CMD:     cmd.ViewOrginMsg.String(),
 		Payload: []byte(msg),
 	})
+}
+
+func (p *processor) processBan(ctx context.Context, chatID string, msg *tgbotapi.Message) error {
+	_, err := p.replacer.Replace(ctx, chatID, msg.Text)
+	if err != nil {
+		return fmt.Errorf("replace msg: %w", err)
+	}
+
+	if err := p.msgSender.Edit(ctx, msg, "message is banned", p.viewOriginMsgButton(ctx, msg.Text)...); err != nil {
+		return fmt.Errorf("msg edit: %w", err)
+	}
+
+	return nil
 }

@@ -42,6 +42,11 @@ type CommandStorage interface {
 	IsNotFoundError(err error) bool
 }
 
+type BanProcessor interface {
+	IsBanned(ctx context.Context, id string) bool
+	AddViolation(ctx context.Context, id string) error
+}
+
 type processor struct {
 	replacer          TextReplacer
 	msgSender         MsgSender
@@ -49,6 +54,7 @@ type processor struct {
 	wordsUpdater      WordsUpdater
 	permissionChecker PermissionChecker
 	commandStorage    CommandStorage
+	banProcessor      BanProcessor
 
 	cmdRouter     cmd.Router
 	buttonsRouter cmd.Router
@@ -61,6 +67,7 @@ func New(
 	wordsUpdater WordsUpdater,
 	permissionChecker PermissionChecker,
 	commandStorage CommandStorage,
+	banProcessor BanProcessor,
 ) *processor {
 	p := &processor{
 		replacer:          replacer,
@@ -69,6 +76,7 @@ func New(
 		wordsUpdater:      wordsUpdater,
 		permissionChecker: permissionChecker,
 		commandStorage:    commandStorage,
+		banProcessor:      banProcessor,
 	}
 
 	p.initCommandRoutes()
