@@ -27,7 +27,7 @@ func NewRedisBanProcessor(client *redis.Client, banTTL time.Duration, violations
 }
 
 func (r *redisBanProcessor) IsBanned(ctx context.Context, id string) bool {
-	if err := r.client.Exists(ctx, makeBanKey(id)).Err(); err != nil {
+	if err := r.client.Get(ctx, makeBanKey(id)).Err(); err != nil {
 		if errors.Is(err, redis.Nil) {
 			return false
 		}

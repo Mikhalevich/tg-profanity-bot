@@ -21,7 +21,7 @@ func (p *processor) ProcessMessage(ctx context.Context, msg *tgbotapi.Message) e
 	)
 
 	if p.banProcessor.IsBanned(ctx, makeBanID(chatID, userID)) {
-		if err := p.processBan(ctx, chatID, msg); err != nil {
+		if err := p.processBan(ctx, msg); err != nil {
 			return fmt.Errorf("process ban: %w", err)
 		}
 
@@ -76,13 +76,8 @@ func (p *processor) viewOriginMsgButton(ctx context.Context, msg string) []tgbot
 	})
 }
 
-func (p *processor) processBan(ctx context.Context, chatID string, msg *tgbotapi.Message) error {
-	_, err := p.replacer.Replace(ctx, chatID, msg.Text)
-	if err != nil {
-		return fmt.Errorf("replace msg: %w", err)
-	}
-
-	if err := p.msgSender.Edit(ctx, msg, "message is banned", p.viewOriginMsgButton(ctx, msg.Text)...); err != nil {
+func (p *processor) processBan(ctx context.Context, msg *tgbotapi.Message) error {
+	if err := p.msgSender.Edit(ctx, msg, "user is banned", p.viewOriginMsgButton(ctx, msg.Text)...); err != nil {
 		return fmt.Errorf("msg edit: %w", err)
 	}
 
