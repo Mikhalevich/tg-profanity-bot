@@ -50,6 +50,7 @@ func MakeMsgProcessor(
 	pgCfg config.Postgres,
 	profanityCfg config.Profanity,
 	commandStorageCfg config.CommandRedis,
+	banCfg config.BanRedis,
 ) (bot.MessageProcessor, func(), error) {
 	pg, cleanup, err := InitPostgres(pgCfg)
 	if err != nil {
@@ -73,6 +74,11 @@ func MakeMsgProcessor(
 		return nil, nil, fmt.Errorf("command storage: %w", err)
 	}
 
+	banProcessor, err := makeBanProcessor(banCfg)
+	if err != nil {
+		return nil, nil, fmt.Errorf("ban processor: %w", err)
+	}
+
 	return processor.New(
 		replacer,
 		msgsender.New(api),
@@ -80,7 +86,7 @@ func MakeMsgProcessor(
 		makeWordsUpdaterFromPG(pg),
 		permissionchecker.New(api),
 		commandStorage,
-		banprocessor.NewNope(),
+		banProcessor,
 	), cleanup, nil
 }
 
@@ -150,6 +156,28 @@ func makeCommandStorage(cfg config.CommandRedis) (processor.CommandStorage, erro
 	}
 
 	return commandstorage.NewRedis(rdb, cfg.TTL), nil
+}
+
+func makeBanProcessor(cfg config.BanRedis) (processor.BanProcessor, error) {
+	if cfg.Addr == "" {
+		return banprocessor.NewNope(), nil
+	}
+
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     cfg.Addr,
+		Password: cfg.Pwd,
+		DB:       cfg.DB,
+	})
+
+	if err := redisotel.InstrumentTracing(rdb); err != nil {
+		return nil, fmt.Errorf("redis instrument tracing: %w", err)
+	}
+
+	if err := rdb.Ping(context.Background()).Err(); err != nil {
+		return nil, fmt.Errorf("redis ping: %w", err)
+	}
+
+	return banprocessor.NewRedisBanProcessor(rdb, cfg.BanTTL, cfg.ViolationsPerHour), nil
 }
 
 // MakeRabbitAMQPChannel make rabbitmq channel and returns channel itself, clearing func and error.
