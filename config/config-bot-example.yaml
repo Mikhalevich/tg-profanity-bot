@@ -17,4 +17,10 @@ command_redis:
   pwd: "redis123"
   db: 0
   ttl: 5m
+ban_redis:
+  addr: "redis:6379"
+  pwd: "redis123"
+  db: 1
+  ban_ttl: 5m
+  violations_per_hour: 3
 

@@ -18,7 +18,16 @@ func (p *processor) RemoveWordCommand(
 	msg *tgbotapi.Message,
 ) error {
 	word := strings.TrimSpace(cmdArgs)
-	return p.removeWord(ctx, chatID, word, msg, p.revertButton(ctx, cmd.Add, word))
+
+	return p.removeWord(
+		ctx,
+		chatID,
+		word,
+		msg,
+		buttonRow(
+			p.revertButton(ctx, cmd.Add, word),
+		),
+	)
 }
 
 func (p *processor) RemoveWordCallbackQuery(
