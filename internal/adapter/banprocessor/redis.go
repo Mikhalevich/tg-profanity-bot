@@ -72,9 +72,5 @@ func (r *redisBanProcessor) AddViolation(ctx context.Context, id string) error {
 		return fmt.Errorf("set ban key: %w", err)
 	}
 
-	if err := r.rate.Reset(ctx, key); err != nil {
-		return fmt.Errorf("rate reset: %w", err)
-	}
-
 	return nil
 }
