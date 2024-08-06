@@ -44,6 +44,7 @@ type CommandStorage interface {
 
 type BanProcessor interface {
 	IsBanned(ctx context.Context, id string) bool
+	Unban(ctx context.Context, id string) error
 	AddViolation(ctx context.Context, id string) error
 }
 
@@ -122,6 +123,10 @@ func (p *processor) initButtonsRoutes() {
 		},
 		cmd.ViewOrginMsg: {
 			Handler: p.ViewOriginMsgCallbackQuery,
+			Perm:    cmd.Admin,
+		},
+		cmd.ViewBannedMsg: {
+			Handler: p.ViewBannedMsgCallbackQuery,
 			Perm:    cmd.Admin,
 		},
 	}

@@ -76,8 +76,20 @@ func (p *processor) viewOriginMsgButton(ctx context.Context, msg string) []tgbot
 	})
 }
 
+func (p *processor) viewBannedMsgButton(ctx context.Context, msg string) []tgbotapi.InlineKeyboardButton {
+	return p.makeButton(ctx, "view origin msg", Command{
+		CMD:     cmd.ViewBannedMsg.String(),
+		Payload: []byte(msg),
+	})
+}
+
 func (p *processor) processBan(ctx context.Context, msg *tgbotapi.Message) error {
-	if err := p.msgSender.Edit(ctx, msg, "user is banned", p.viewOriginMsgButton(ctx, msg.Text)...); err != nil {
+	if err := p.msgSender.Edit(
+		ctx,
+		msg,
+		"user is banned",
+		p.viewBannedMsgButton(ctx, msg.Text)...,
+	); err != nil {
 		return fmt.Errorf("msg edit: %w", err)
 	}
 

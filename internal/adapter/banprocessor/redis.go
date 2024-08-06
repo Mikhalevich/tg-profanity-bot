@@ -40,6 +40,14 @@ func (r *redisBanProcessor) IsBanned(ctx context.Context, id string) bool {
 	return true
 }
 
+func (r *redisBanProcessor) Unban(ctx context.Context, id string) error {
+	if err := r.client.Del(ctx, makeBanKey(id)).Err(); err != nil {
+		return fmt.Errorf("redis del: %w", err)
+	}
+
+	return nil
+}
+
 func makeBanKey(id string) string {
 	return fmt.Sprintf("ban:%s", id)
 }
