@@ -13,7 +13,16 @@ import (
 
 func (p *processor) AddWordCommand(ctx context.Context, chatID string, cmdArgs string, msg *tgbotapi.Message) error {
 	word := strings.TrimSpace(cmdArgs)
-	return p.addWord(ctx, chatID, word, msg, p.revertButton(ctx, cmd.Remove, word))
+
+	return p.addWord(
+		ctx,
+		chatID,
+		word,
+		msg,
+		buttonRow(
+			p.revertButton(ctx, cmd.Remove, word),
+		),
+	)
 }
 
 func (p *processor) AddWordCallbackQuery(ctx context.Context, chatID string, word string, msg *tgbotapi.Message) error {

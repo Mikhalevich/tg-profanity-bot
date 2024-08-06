@@ -129,5 +129,9 @@ func (p *processor) initButtonsRoutes() {
 			Handler: p.ViewBannedMsgCallbackQuery,
 			Perm:    cmd.Admin,
 		},
+		cmd.Unban: {
+			Handler: p.UnbanCallbackQuery,
+			Perm:    cmd.Admin,
+		},
 	}
 }

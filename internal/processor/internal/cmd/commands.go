@@ -8,6 +8,7 @@ const (
 	Remove        CMD = "remove"
 	ViewOrginMsg  CMD = "viewOriginMsg"
 	ViewBannedMsg CMD = "viewBannedMsg"
+	Unban         CMD = "unban"
 )
 
 func (c CMD) String() string {

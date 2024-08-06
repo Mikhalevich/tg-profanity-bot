@@ -26,7 +26,14 @@ func (p *processor) ViewBannedMsgCallbackQuery(
 		return nil
 	}
 
-	if err := p.msgSender.Reply(ctx, banMsg, mangledMsg, p.viewOriginMsgButton(ctx, msgText)...); err != nil {
+	if err := p.msgSender.Reply(
+		ctx,
+		banMsg,
+		mangledMsg,
+		buttonRow(
+			p.viewOriginMsgButton(ctx, msgText),
+		)...,
+	); err != nil {
 		return fmt.Errorf("mangled reply: %w", err)
 	}
 
