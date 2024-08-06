@@ -107,7 +107,6 @@ linters:
     - wrapcheck
     - wsl
     - zerologlint
-    - err113
   disable:
     - gci
     - revive
@@ -124,6 +123,7 @@ linters:
     - gochecknoglobals
     - dupword
     - testpackage
+    - err113
 
 issues:
   exclude-rules:
