@@ -1,4 +1,4 @@
-package profanity
+package mangler
 
 import (
 	"context"
@@ -7,14 +7,14 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/matcher"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/replacer"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/mangler/matcher"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/mangler/replacer"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
 )
 
 type ProfanityStaticSuit struct {
 	*suite.Suite
-	p *profanity
+	m *mangler
 }
 
 func TestProfanityStaticSuit(t *testing.T) {
@@ -30,7 +30,7 @@ func (s *ProfanityStaticSuit) SetupSuite() {
 		s.Fail("get bad words: %v", err)
 	}
 
-	s.p = New(matcher.NewAhocorasick(words), replacer.NewStatic("<< censored >>"))
+	s.m = New(matcher.NewAhocorasick(words), replacer.NewStatic("<< censored >>"))
 }
 
 func (s *ProfanityStaticSuit) TestAhocorasickStatic() {
@@ -77,13 +77,13 @@ func (s *ProfanityStaticSuit) TestAhocorasickStatic() {
 	)
 
 	for _, tc := range tests {
-		actual, err := s.p.Replace(context.Background(), "", tc.Msg)
+		actual, err := s.m.Mangle(context.Background(), "", tc.Msg)
 		s.Require().NoError(err)
 		s.Require().EqualValues(tc.ExpectedMsg, actual)
 	}
 }
 
-func initStatic(b *testing.B) *profanity {
+func initStatic(b *testing.B) *mangler {
 	b.Helper()
 
 	words, err := config.BadWords()
@@ -136,12 +136,12 @@ func BenchmarkAhocorasickStaticPredefined(b *testing.B) {
 			{Msg: "ебёт", ExpectedMsg: "<< censored >>"},
 		}
 
-		p = initStatic(b)
+		m = initStatic(b)
 	)
 
 	for i := 0; i < b.N; i++ {
 		for _, tc := range tests {
-			if _, err := p.Replace(context.Background(), "", tc.Msg); err != nil {
+			if _, err := m.Mangle(context.Background(), "", tc.Msg); err != nil {
 				b.Fatalf("unexpected error: %v", err)
 			}
 		}
@@ -152,7 +152,7 @@ func BenchmarkAhocorasickStaticNoReplacement(b *testing.B) {
 	p := initStatic(b)
 
 	for i := 0; i < b.N; i++ {
-		if _, err := p.Replace(
+		if _, err := p.Mangle(
 			context.Background(),
 			"",
 			"some text without bad words",
@@ -163,10 +163,10 @@ func BenchmarkAhocorasickStaticNoReplacement(b *testing.B) {
 }
 
 func BenchmarkAhocorasickStaticSmallText(b *testing.B) {
-	p := initStatic(b)
+	m := initStatic(b)
 
 	for i := 0; i < b.N; i++ {
-		if _, err := p.Replace(
+		if _, err := m.Mangle(
 			context.Background(),
 			"",
 			"some dildo small ass test cock case erotic",
@@ -177,10 +177,10 @@ func BenchmarkAhocorasickStaticSmallText(b *testing.B) {
 }
 
 func BenchmarkAhocorasickStaticMediumText(b *testing.B) {
-	p := initStatic(b)
+	m := initStatic(b)
 
 	for i := 0; i < b.N; i++ {
-		if _, err := p.Replace(
+		if _, err := m.Mangle(
 			context.Background(),
 			"",
 			strings.Repeat("some dildo small ass test cock case erotic", 30),
@@ -191,10 +191,10 @@ func BenchmarkAhocorasickStaticMediumText(b *testing.B) {
 }
 
 func BenchmarkAhocorasickStaticLargeText(b *testing.B) {
-	p := initStatic(b)
+	m := initStatic(b)
 
 	for i := 0; i < b.N; i++ {
-		if _, err := p.Replace(
+		if _, err := m.Mangle(
 			context.Background(),
 			"",
 			strings.Repeat("some dildo small ass test cock case erotic", 30),

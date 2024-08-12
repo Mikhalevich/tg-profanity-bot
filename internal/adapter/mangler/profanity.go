@@ -1,11 +1,11 @@
-package profanity
+package mangler
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/internal/position"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/mangler/internal/position"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 )
 
@@ -17,19 +17,19 @@ type Replacer interface {
 	Replace(text string) string
 }
 
-type profanity struct {
+type mangler struct {
 	matcher  Matcher
 	replacer Replacer
 }
 
-func New(matcher Matcher, replacer Replacer) *profanity {
-	return &profanity{
+func New(matcher Matcher, replacer Replacer) *mangler {
+	return &mangler{
 		matcher:  matcher,
 		replacer: replacer,
 	}
 }
 
-func (p *profanity) Replace(
+func (m *mangler) Mangle(
 	ctx context.Context,
 	chatID string,
 	msg string,
@@ -39,7 +39,7 @@ func (p *profanity) Replace(
 
 	msgLower := strings.ToLower(msg)
 
-	foundedWords, err := p.matcher.Match(ctx, chatID, []byte(msgLower))
+	foundedWords, err := m.matcher.Match(ctx, chatID, []byte(msgLower))
 	if err != nil {
 		return "", fmt.Errorf("match words: %w", err)
 	}
@@ -49,18 +49,18 @@ func (p *profanity) Replace(
 	}
 
 	var (
-		wordsPositions   = p.wordsPositions(ctx, msgLower, foundedWords)
-		reducedPositions = p.reduceInnerPositions(ctx, wordsPositions)
+		wordsPositions   = m.wordsPositions(ctx, msgLower, foundedWords)
+		reducedPositions = m.reduceInnerPositions(ctx, wordsPositions)
 	)
 
 	if len(reducedPositions) == 0 {
 		return msg, nil
 	}
 
-	return p.mangle(ctx, msg, reducedPositions), nil
+	return m.mangle(ctx, msg, reducedPositions), nil
 }
 
-func (p *profanity) wordsPositions(ctx context.Context, msg string, foundedWords []string) *position.SortedPositions {
+func (m *mangler) wordsPositions(ctx context.Context, msg string, foundedWords []string) *position.SortedPositions {
 	_, span := tracing.StartSpan(ctx)
 	defer span.End()
 
@@ -94,7 +94,7 @@ func (p *profanity) wordsPositions(ctx context.Context, msg string, foundedWords
 	return positions
 }
 
-func (p *profanity) reduceInnerPositions(ctx context.Context, wordsPositions *position.SortedPositions) []int {
+func (m *mangler) reduceInnerPositions(ctx context.Context, wordsPositions *position.SortedPositions) []int {
 	_, span := tracing.StartSpan(ctx)
 	defer span.End()
 
@@ -123,7 +123,7 @@ func (p *profanity) reduceInnerPositions(ctx context.Context, wordsPositions *po
 	return reducedPositions
 }
 
-func (p *profanity) mangle(ctx context.Context, msg string, positions []int) string {
+func (m *mangler) mangle(ctx context.Context, msg string, positions []int) string {
 	_, span := tracing.StartSpan(ctx)
 	defer span.End()
 
@@ -137,7 +137,7 @@ func (p *profanity) mangle(ctx context.Context, msg string, positions []int) str
 	for i := 0; i < len(positions); i += 2 {
 		builder.WriteString(msg[lastIndex:positions[i]])
 
-		censoredText := p.replacer.Replace(msg[positions[i]:positions[i+1]])
+		censoredText := m.replacer.Replace(msg[positions[i]:positions[i+1]])
 		builder.WriteString(censoredText)
 
 		lastIndex = positions[i+1]

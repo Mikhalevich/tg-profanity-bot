@@ -8,8 +8,8 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-type TextReplacer interface {
-	Replace(ctx context.Context, chatID string, msg string) (string, error)
+type Mangler interface {
+	Mangle(ctx context.Context, chatID string, msg string) (string, error)
 }
 
 type MsgSender interface {
@@ -49,7 +49,7 @@ type BanProcessor interface {
 }
 
 type processor struct {
-	replacer          TextReplacer
+	mangler           Mangler
 	msgSender         MsgSender
 	wordsProvider     WordsProvider
 	wordsUpdater      WordsUpdater
@@ -62,7 +62,7 @@ type processor struct {
 }
 
 func New(
-	replacer TextReplacer,
+	mangler Mangler,
 	msgSender MsgSender,
 	wordsProvider WordsProvider,
 	wordsUpdater WordsUpdater,
@@ -71,7 +71,7 @@ func New(
 	banProcessor BanProcessor,
 ) *processor {
 	p := &processor{
-		replacer:          replacer,
+		mangler:           mangler,
 		msgSender:         msgSender,
 		wordsProvider:     wordsProvider,
 		wordsUpdater:      wordsUpdater,

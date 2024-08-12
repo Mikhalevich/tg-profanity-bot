@@ -1,4 +1,4 @@
-package profanity
+package mangler
 
 import (
 	"context"
@@ -7,14 +7,14 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/matcher"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/replacer"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/mangler/matcher"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/mangler/replacer"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
 )
 
 type ProfanityDynamicSuit struct {
 	*suite.Suite
-	p *profanity
+	m *mangler
 }
 
 func TestProfanityDynamicSuit(t *testing.T) {
@@ -30,7 +30,7 @@ func (s *ProfanityDynamicSuit) SetupSuite() {
 		s.Fail("get bad words: %v", err)
 	}
 
-	s.p = New(matcher.NewAhocorasick(words), replacer.NewDynamic("*"))
+	s.m = New(matcher.NewAhocorasick(words), replacer.NewDynamic("*"))
 }
 
 func (s *ProfanityDynamicSuit) TestAhocorasickDynamic() {
@@ -74,13 +74,13 @@ func (s *ProfanityDynamicSuit) TestAhocorasickDynamic() {
 	)
 
 	for _, tc := range tests {
-		actual, err := s.p.Replace(context.Background(), "", tc.Msg)
+		actual, err := s.m.Mangle(context.Background(), "", tc.Msg)
 		s.Require().NoError(err)
 		s.Require().EqualValues(tc.ExpectedMsg, actual)
 	}
 }
 
-func initDynamic(b *testing.B) *profanity {
+func initDynamic(b *testing.B) *mangler {
 	b.Helper()
 
 	words, err := config.BadWords()
@@ -130,12 +130,12 @@ func BenchmarkAhocorasickDynamicPredefined(b *testing.B) {
 			{Msg: "ебёт", ExpectedMsg: "****"},
 		}
 
-		p = initDynamic(b)
+		m = initDynamic(b)
 	)
 
 	for i := 0; i < b.N; i++ {
 		for _, tc := range tests {
-			if _, err := p.Replace(context.Background(), "", tc.Msg); err != nil {
+			if _, err := m.Mangle(context.Background(), "", tc.Msg); err != nil {
 				b.Fatalf("unexpected error: %v", err)
 			}
 		}
@@ -143,20 +143,20 @@ func BenchmarkAhocorasickDynamicPredefined(b *testing.B) {
 }
 
 func BenchmarkAhocorasickDynamicNoReplacement(b *testing.B) {
-	p := initDynamic(b)
+	m := initDynamic(b)
 
 	for i := 0; i < b.N; i++ {
-		if _, err := p.Replace(context.Background(), "", "some text without bad words"); err != nil {
+		if _, err := m.Mangle(context.Background(), "", "some text without bad words"); err != nil {
 			b.Fatalf("unexpected error: %v", err)
 		}
 	}
 }
 
 func BenchmarkAhocorasickDynamicSmallText(b *testing.B) {
-	p := initDynamic(b)
+	m := initDynamic(b)
 
 	for i := 0; i < b.N; i++ {
-		if _, err := p.Replace(
+		if _, err := m.Mangle(
 			context.Background(),
 			"",
 			"some dildo small ass test cock case erotic",
@@ -167,10 +167,10 @@ func BenchmarkAhocorasickDynamicSmallText(b *testing.B) {
 }
 
 func BenchmarkAhocorasickDynamicMediumText(b *testing.B) {
-	p := initDynamic(b)
+	m := initDynamic(b)
 
 	for i := 0; i < b.N; i++ {
-		if _, err := p.Replace(
+		if _, err := m.Mangle(
 			context.Background(),
 			"",
 			strings.Repeat("some dildo small ass test cock case erotic", 30),
@@ -181,10 +181,10 @@ func BenchmarkAhocorasickDynamicMediumText(b *testing.B) {
 }
 
 func BenchmarkAhocorasickDynamicLargeText(b *testing.B) {
-	p := initDynamic(b)
+	m := initDynamic(b)
 
 	for i := 0; i < b.N; i++ {
-		if _, err := p.Replace(
+		if _, err := m.Mangle(
 			context.Background(),
 			"",
 			strings.Repeat("some dildo small ass test cock case erotic", 30),

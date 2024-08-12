@@ -48,7 +48,7 @@ func makeBanID(chatID, userID string) string {
 }
 
 func (p *processor) processReplace(ctx context.Context, chatID, userID string, msg *tgbotapi.Message) error {
-	mangledMsg, err := p.replacer.Replace(ctx, chatID, msg.Text)
+	mangledMsg, err := p.mangler.Mangle(ctx, chatID, msg.Text)
 	if err != nil {
 		return fmt.Errorf("replace msg: %w", err)
 	}

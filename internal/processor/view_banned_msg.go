@@ -13,7 +13,7 @@ func (p *processor) ViewBannedMsgCallbackQuery(
 	msgText string,
 	banMsg *tgbotapi.Message,
 ) error {
-	mangledMsg, err := p.replacer.Replace(ctx, chatID, msgText)
+	mangledMsg, err := p.mangler.Mangle(ctx, chatID, msgText)
 	if err != nil {
 		return fmt.Errorf("replace msg: %w", err)
 	}

@@ -17,11 +17,11 @@ import (
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/banprocessor"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/commandstorage"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/mangler"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/mangler/matcher"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/mangler/replacer"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/msgsender"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/permissionchecker"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/matcher"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/profanity/replacer"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/staticwords"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/storage/postgres"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/bot"
@@ -29,15 +29,15 @@ import (
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor"
 )
 
-func MakeProfanityReplacer(cfg config.Profanity, m profanity.Matcher) processor.TextReplacer {
+func MakeProfanityReplacer(cfg config.Profanity, m mangler.Matcher) processor.Mangler {
 	if cfg.Dynamic != "" {
-		return profanity.New(m, replacer.NewDynamic(cfg.Dynamic))
+		return mangler.New(m, replacer.NewDynamic(cfg.Dynamic))
 	}
 
-	return profanity.New(m, replacer.NewStatic(cfg.Static))
+	return mangler.New(m, replacer.NewStatic(cfg.Static))
 }
 
-func MakeMatcher(pg *postgres.Postgres, words []string) profanity.Matcher {
+func MakeMatcher(pg *postgres.Postgres, words []string) mangler.Matcher {
 	if pg != nil {
 		return matcher.NewNewAhocorasickDynamic(pg, words)
 	}
