@@ -7,9 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/app/logger"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/bot"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
@@ -19,23 +18,23 @@ import (
 func main() {
 	var cfg config.Bot
 	if err := app.LoadConfig(&cfg); err != nil {
-		logrus.WithError(err).Error("failed to load config")
+		logger.StdLogger().WithError(err).Error("failed to load config")
 		os.Exit(1)
 	}
 
-	logger, err := app.SetupLogger(cfg.LogLevel)
+	l, err := app.SetupLogger(cfg.LogLevel)
 	if err != nil {
-		logrus.WithError(err).Error("failed to setup logger")
+		logger.StdLogger().WithError(err).Error("failed to setup logger")
 		os.Exit(1)
 	}
 
-	if err := runService(cfg, logger); err != nil {
-		logger.WithError(err).Error("failed run service")
+	if err := runService(cfg, l); err != nil {
+		l.WithError(err).Error("failed run service")
 		os.Exit(1)
 	}
 }
 
-func runService(cfg config.Bot, logger *logrus.Logger) error {
+func runService(cfg config.Bot, l logger.Logger) error {
 	if err := tracing.SetupTracer(cfg.Tracing.Endpoint, cfg.Tracing.ServiceName, ""); err != nil {
 		return fmt.Errorf("setup tracer: %w", err)
 	}
@@ -54,7 +53,7 @@ func runService(cfg config.Bot, logger *logrus.Logger) error {
 
 	defer cleanup()
 
-	tgBot, err := bot.New(cfg.Updates.Token, msgProcessor, logger.WithField("bot_name", "profanity_bot"))
+	tgBot, err := bot.New(cfg.Updates.Token, msgProcessor, l.WithField("bot_name", "profanity_bot"))
 	if err != nil {
 		return fmt.Errorf("init bot: %w", err)
 	}
@@ -64,7 +63,7 @@ func runService(cfg config.Bot, logger *logrus.Logger) error {
 	go func() {
 		defer cancel()
 
-		logger.Info("bot running...")
+		l.Info("bot running...")
 		tgBot.ProcessUpdates(cfg.Updates.UpdateTimeoutSeconds)
 	}()
 
@@ -76,14 +75,14 @@ loop:
 		select {
 		case <-terminate:
 			signal.Stop(terminate)
-			logger.Info("stopping bot...")
+			l.Info("stopping bot...")
 			tgBot.Stop()
 		case <-ctx.Done():
 			break loop
 		}
 	}
 
-	logger.Info("bot stopped...")
+	l.Info("bot stopped...")
 
 	return nil
 }
