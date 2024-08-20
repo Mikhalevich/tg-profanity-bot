@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"os"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -12,7 +11,6 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/extra/redisotel/v9"
 	"github.com/redis/go-redis/v9"
-	"github.com/sirupsen/logrus"
 	"github.com/uptrace/opentelemetry-go-extra/otelsql"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/banprocessor"
@@ -24,6 +22,7 @@ import (
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/permissionchecker"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/staticwords"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/storage/postgres"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/app/logger"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/bot"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor"
@@ -209,16 +208,13 @@ func LoadConfig(cfg any) error {
 	return nil
 }
 
-func SetupLogger(lvl string) (*logrus.Logger, error) {
-	level, err := logrus.ParseLevel(lvl)
+func SetupLogger(lvl string) (logger.Logger, error) {
+	l, err := logger.NewLogrusWithLevel(lvl)
 	if err != nil {
-		return nil, fmt.Errorf("parse log level: %w", err)
+		return nil, fmt.Errorf("creating new logger: %w", err)
 	}
 
-	logger := logrus.New()
-	logger.SetLevel(level)
-	logger.SetOutput(os.Stdout)
-	logger.SetFormatter(&logrus.JSONFormatter{})
+	logger.SetStdLogger(l)
 
-	return logger, nil
+	return l, nil
 }

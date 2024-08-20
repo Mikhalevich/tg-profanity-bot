@@ -6,7 +6,8 @@ import (
 	"sync"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/sirupsen/logrus"
+
+	"github.com/Mikhalevich/tg-profanity-bot/internal/app/logger"
 )
 
 type MessageProcessor interface {
@@ -17,13 +18,13 @@ type MessageProcessor interface {
 type bot struct {
 	api       *tgbotapi.BotAPI
 	processor MessageProcessor
-	logger    *logrus.Entry
+	logger    logger.Logger
 }
 
 func New(
 	token string,
 	processor MessageProcessor,
-	logger *logrus.Entry,
+	logger logger.Logger,
 ) (*bot, error) {
 	api, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
@@ -51,7 +52,8 @@ func (b *bot) ProcessUpdates(timeout int) {
 		go func(update *tgbotapi.Update) {
 			defer wg.Done()
 
-			if err := b.processUpdate(context.Background(), update); err != nil {
+			ctx := logger.WithLogger(context.Background(), b.logger)
+			if err := b.processUpdate(ctx, update); err != nil {
 				b.logger.WithError(err).Error("process update")
 			}
 		}(&update)
@@ -84,7 +86,7 @@ func extractMessage(u *tgbotapi.Update) *tgbotapi.Message {
 func (b *bot) processUpdate(ctx context.Context, update *tgbotapi.Update) error {
 	msg := extractTextMessage(update)
 	if msg != nil {
-		b.logger.WithFields(logrus.Fields{
+		b.logger.WithFields(logger.Fields{
 			"chat_id": msg.Chat.ID,
 			"message": msg.Text,
 		}).Debug("incoming message")

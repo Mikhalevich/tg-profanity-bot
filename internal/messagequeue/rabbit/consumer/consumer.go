@@ -8,8 +8,8 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"github.com/sirupsen/logrus"
 
+	"github.com/Mikhalevich/tg-profanity-bot/internal/app/logger"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/messagequeue/rabbit/internal/contract"
 )
@@ -22,12 +22,12 @@ type MessageProcessor interface {
 type consumer struct {
 	ch         *amqp.Channel
 	queueName  string
-	logger     *logrus.Entry
+	logger     logger.Logger
 	workerChan chan amqp.Delivery
 	wg         sync.WaitGroup
 }
 
-func New(ch *amqp.Channel, queueName string, logger *logrus.Entry) (*consumer, error) {
+func New(ch *amqp.Channel, queueName string, logger logger.Logger) (*consumer, error) {
 	_, err := ch.QueueDeclare(queueName, true, false, false, false, nil)
 	if err != nil {
 		return nil, fmt.Errorf("declare queue: %w", err)

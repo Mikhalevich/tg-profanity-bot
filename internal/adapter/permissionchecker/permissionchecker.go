@@ -4,8 +4,8 @@ import (
 	"context"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/sirupsen/logrus"
 
+	"github.com/Mikhalevich/tg-profanity-bot/internal/app/logger"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 )
 
@@ -30,7 +30,7 @@ func (m *memberapi) IsAdmin(ctx context.Context, chatID, userID int64) bool {
 	})
 
 	if err != nil {
-		logrus.WithError(err).Warn("failed to get chat")
+		logger.FromContext(ctx).WithError(err).Warn("failed to get chat")
 		return false
 	}
 
@@ -46,7 +46,7 @@ func (m *memberapi) IsAdmin(ctx context.Context, chatID, userID int64) bool {
 	})
 
 	if err != nil {
-		logrus.WithError(err).Warn("failed to get chat member")
+		logger.FromContext(ctx).WithError(err).Warn("failed to get chat member")
 		return false
 	}
 
