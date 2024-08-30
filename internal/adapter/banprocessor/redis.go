@@ -56,21 +56,21 @@ func makeRateLimitterKey(id string) string {
 	return fmt.Sprintf("rate:%s", id)
 }
 
-func (r *redisBanProcessor) AddViolation(ctx context.Context, id string) error {
+func (r *redisBanProcessor) AddViolation(ctx context.Context, id string) (bool, error) {
 	key := makeRateLimitterKey(id)
 
 	res, err := r.rate.Allow(ctx, key, redis_rate.PerHour(r.violationsPerHour))
 	if err != nil {
-		return fmt.Errorf("rate allow: %w", err)
+		return false, fmt.Errorf("rate allow: %w", err)
 	}
 
 	if res.Allowed > 0 {
-		return nil
+		return false, nil
 	}
 
 	if err := r.client.Set(ctx, makeBanKey(id), "banned", r.banTTL).Err(); err != nil {
-		return fmt.Errorf("set ban key: %w", err)
+		return false, fmt.Errorf("set ban key: %w", err)
 	}
 
-	return nil
+	return true, nil
 }

@@ -57,6 +57,19 @@ func (p *processor) processReplace(ctx context.Context, chatID, userID string, m
 		return nil
 	}
 
+	isBanned, err := p.banProcessor.AddViolation(ctx, makeBanID(chatID, userID))
+	if err != nil {
+		return fmt.Errorf("add violation: %w", err)
+	}
+
+	if isBanned {
+		if err := p.processBan(ctx, userID, msg); err != nil {
+			return fmt.Errorf("process ban: %w", err)
+		}
+
+		return nil
+	}
+
 	if err := p.msgSender.Edit(
 		ctx,
 		msg,
@@ -66,10 +79,6 @@ func (p *processor) processReplace(ctx context.Context, chatID, userID string, m
 		)...,
 	); err != nil {
 		return fmt.Errorf("msg edit: %w", err)
-	}
-
-	if err := p.banProcessor.AddViolation(ctx, makeBanID(chatID, userID)); err != nil {
-		return fmt.Errorf("add violation: %w", err)
 	}
 
 	return nil
