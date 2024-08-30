@@ -45,7 +45,7 @@ type CommandStorage interface {
 type BanProcessor interface {
 	IsBanned(ctx context.Context, id string) bool
 	Unban(ctx context.Context, id string) error
-	AddViolation(ctx context.Context, id string) error
+	AddViolation(ctx context.Context, id string) (bool, error)
 }
 
 type processor struct {

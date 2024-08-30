@@ -19,6 +19,6 @@ func (n *nope) Unban(ctx context.Context, id string) error {
 	return nil
 }
 
-func (n *nope) AddViolation(ctx context.Context, id string) error {
-	return nil
+func (n *nope) AddViolation(ctx context.Context, id string) (bool, error) {
+	return false, nil
 }
