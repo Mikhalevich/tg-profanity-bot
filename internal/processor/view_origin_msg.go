@@ -4,16 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
 func (p *processor) ViewOriginMsgCallbackQuery(
 	ctx context.Context,
-	chatID string,
+	info port.MessageInfo,
 	originMsgText string,
-	msg *tgbotapi.Message,
 ) error {
-	if err := p.msgSender.Reply(ctx, msg, originMsgText); err != nil {
+	if err := p.msgSender.Reply(ctx, info, originMsgText); err != nil {
 		return fmt.Errorf("view reply: %w", err)
 	}
 

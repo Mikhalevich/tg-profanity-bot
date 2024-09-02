@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"strings"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/cmd"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
-func (p *processor) tryProcessCommand(ctx context.Context, chatID string, msg *tgbotapi.Message) (bool, error) {
-	command, args := extractCommand(msg.Text)
+func (p *processor) tryProcessCommand(ctx context.Context, info port.MessageInfo) (bool, error) {
+	command, args := extractCommand(info.Text)
 	if command == "" {
 		return false, nil
 	}
@@ -26,12 +25,12 @@ func (p *processor) tryProcessCommand(ctx context.Context, chatID string, msg *t
 	defer span.End()
 
 	if r.IsAdmin() {
-		if !p.permissionChecker.IsAdmin(ctx, msg.Chat.ID, msg.From.ID) {
+		if !p.permissionChecker.IsAdmin(ctx, info.ChatID.Int64(), info.UserID.Int64()) {
 			return false, nil
 		}
 	}
 
-	if err := r.Handler(ctx, chatID, args, msg); err != nil {
+	if err := r.Handler(ctx, info, args); err != nil {
 		return false, fmt.Errorf("handle command %s: %w", command.String(), err)
 	}
 
@@ -48,13 +47,13 @@ func extractCommand(msg string) (cmd.CMD, string) {
 	return cmd.CMD(command), args
 }
 
-func (p *processor) GetAllWords(ctx context.Context, chatID string, cmdArgs string, msg *tgbotapi.Message) error {
-	words, err := p.wordsProvider.ChatWords(ctx, chatID)
+func (p *processor) GetAllWords(ctx context.Context, info port.MessageInfo, cmdArgs string) error {
+	words, err := p.wordsProvider.ChatWords(ctx, info.ChatID.String())
 	if err != nil {
 		return fmt.Errorf("get chat words: %w", err)
 	}
 
-	if err := p.msgSender.Reply(ctx, msg, strings.Join(words, "\n")); err != nil {
+	if err := p.msgSender.Reply(ctx, info, strings.Join(words, "\n")); err != nil {
 		return fmt.Errorf("msg reply: %w", err)
 	}
 

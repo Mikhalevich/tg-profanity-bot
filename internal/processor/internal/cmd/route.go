@@ -3,7 +3,7 @@ package cmd
 import (
 	"context"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
 type Permission int
@@ -14,7 +14,7 @@ const (
 )
 
 type Route struct {
-	Handler func(ctx context.Context, chatID string, cmdArgs string, msg *tgbotapi.Message) error
+	Handler func(ctx context.Context, info port.MessageInfo, cmdArgs string) error
 	Perm    Permission
 }
 

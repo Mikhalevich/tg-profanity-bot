@@ -8,11 +8,12 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/logger"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
 type MessageProcessor interface {
-	ProcessMessage(ctx context.Context, msg *tgbotapi.Message) error
-	ProcessCallbackQuery(ctx context.Context, query *tgbotapi.CallbackQuery) error
+	ProcessMessage(ctx context.Context, info port.MessageInfo) error
+	ProcessCallbackQuery(ctx context.Context, query port.CallbackQuery) error
 }
 
 type bot struct {
@@ -83,6 +84,32 @@ func extractMessage(u *tgbotapi.Update) *tgbotapi.Message {
 	return nil
 }
 
+func toMessageInfo(msg *tgbotapi.Message) port.MessageInfo {
+	return port.MessageInfo{
+		MessageID:        msg.MessageID,
+		ChatID:           port.NewID(msg.Chat.ID),
+		UserID:           port.NewID(msg.From.ID),
+		UserFrom:         msg.From,
+		Text:             msg.Text,
+		ReplyToMessageID: extractReplyToMessageID(msg),
+	}
+}
+
+func extractReplyToMessageID(msg *tgbotapi.Message) int {
+	if msg.ReplyToMessage != nil {
+		return msg.ReplyToMessage.MessageID
+	}
+
+	return 0
+}
+
+func toCallbackQuery(query *tgbotapi.CallbackQuery) port.CallbackQuery {
+	return port.CallbackQuery{
+		MessageInfo: toMessageInfo(query.Message),
+		Data:        query.Data,
+	}
+}
+
 func (b *bot) processUpdate(ctx context.Context, update *tgbotapi.Update) error {
 	msg := extractTextMessage(update)
 	if msg != nil {
@@ -91,7 +118,7 @@ func (b *bot) processUpdate(ctx context.Context, update *tgbotapi.Update) error 
 			"message": msg.Text,
 		}).Debug("incoming message")
 
-		if err := b.processor.ProcessMessage(ctx, msg); err != nil {
+		if err := b.processor.ProcessMessage(ctx, toMessageInfo(msg)); err != nil {
 			return fmt.Errorf("process message: %w", err)
 		}
 
@@ -99,7 +126,7 @@ func (b *bot) processUpdate(ctx context.Context, update *tgbotapi.Update) error 
 	}
 
 	if update.CallbackQuery != nil {
-		if err := b.processor.ProcessCallbackQuery(ctx, update.CallbackQuery); err != nil {
+		if err := b.processor.ProcessCallbackQuery(ctx, toCallbackQuery(update.CallbackQuery)); err != nil {
 			return fmt.Errorf("process callback query: %w", err)
 		}
 

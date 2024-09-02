@@ -10,7 +10,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/processor"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
 type redisStorage struct {
@@ -25,7 +25,7 @@ func NewRedis(client *redis.Client, ttl time.Duration) *redisStorage {
 	}
 }
 
-func (r *redisStorage) Set(ctx context.Context, id string, command processor.Command) error {
+func (r *redisStorage) Set(ctx context.Context, id string, command port.Command) error {
 	var buf bytes.Buffer
 	if err := gob.NewEncoder(&buf).Encode(command); err != nil {
 		return fmt.Errorf("gob encode: %w", err)
@@ -38,15 +38,15 @@ func (r *redisStorage) Set(ctx context.Context, id string, command processor.Com
 	return nil
 }
 
-func (r *redisStorage) Get(ctx context.Context, id string) (processor.Command, error) {
+func (r *redisStorage) Get(ctx context.Context, id string) (port.Command, error) {
 	b, err := r.client.GetDel(ctx, id).Bytes()
 	if err != nil {
-		return processor.Command{}, fmt.Errorf("redis getdel: %w", err)
+		return port.Command{}, fmt.Errorf("redis getdel: %w", err)
 	}
 
-	var cmd processor.Command
+	var cmd port.Command
 	if err := gob.NewDecoder(bytes.NewReader(b)).Decode(&cmd); err != nil {
-		return processor.Command{}, fmt.Errorf("gob decode: %w", err)
+		return port.Command{}, fmt.Errorf("gob decode: %w", err)
 	}
 
 	return cmd, nil

@@ -8,6 +8,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
 type msgsender struct {
@@ -22,19 +23,19 @@ func New(api *tgbotapi.BotAPI) *msgsender {
 
 func (s *msgsender) Edit(
 	ctx context.Context,
-	originMsg *tgbotapi.Message,
+	originMsgInfo port.MessageInfo,
 	msg string,
 	buttons ...tgbotapi.InlineKeyboardButton,
 ) error {
 	_, span := tracing.StartSpan(ctx)
 	defer span.End()
 
-	deletedMsg := tgbotapi.NewDeleteMessage(originMsg.Chat.ID, originMsg.MessageID)
+	deletedMsg := tgbotapi.NewDeleteMessage(originMsgInfo.ChatID.Int64(), originMsgInfo.MessageID)
 	//nolint:errcheck
 	// disabled due to api delete error
 	s.api.Send(deletedMsg)
 
-	if _, err := s.api.Send(newEditedMessage(originMsg, msg, buttons)); err != nil {
+	if _, err := s.api.Send(newEditedMessage(originMsgInfo, msg, buttons)); err != nil {
 		return fmt.Errorf("send new: %w", err)
 	}
 
@@ -42,21 +43,21 @@ func (s *msgsender) Edit(
 }
 
 func newEditedMessage(
-	originMsg *tgbotapi.Message,
+	originMsgInfo port.MessageInfo,
 	msgText string,
 	buttons []tgbotapi.InlineKeyboardButton,
 ) *tgbotapi.MessageConfig {
-	formattedMsgText, msgEntities := formatMessage(msgText, originMsg.From)
+	formattedMsgText, msgEntities := formatMessage(msgText, originMsgInfo.UserFrom)
 
-	newMsg := tgbotapi.NewMessage(originMsg.Chat.ID, formattedMsgText)
+	newMsg := tgbotapi.NewMessage(originMsgInfo.ChatID.Int64(), formattedMsgText)
 	newMsg.Entities = msgEntities
 
 	if len(buttons) > 0 {
 		newMsg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(buttons)
 	}
 
-	if originMsg.ReplyToMessage != nil {
-		newMsg.ReplyToMessageID = originMsg.ReplyToMessage.MessageID
+	if originMsgInfo.ReplyToMessageID != 0 {
+		newMsg.ReplyToMessageID = originMsgInfo.ReplyToMessageID
 	}
 
 	return &newMsg
@@ -70,7 +71,7 @@ func formatMessage(msg string, fromUser *tgbotapi.User) (string, []tgbotapi.Mess
 		senderHeader       = "Sender: "
 		senderHeaderOffset = editedHeaderOffset + editedHeaderLen
 		senderHeaderLen    = utf8.RuneCountInString(senderHeader)
-		userName           = extractUserName(fromUser)
+		userName           = fromUser.String()
 		userNameOffset     = senderHeaderOffset + senderHeaderLen
 		userNameLen        = utf8.RuneCountInString(userName)
 	)
@@ -94,12 +95,4 @@ func formatMessage(msg string, fromUser *tgbotapi.User) (string, []tgbotapi.Mess
 				User:   fromUser,
 			},
 		}
-}
-
-func extractUserName(from *tgbotapi.User) string {
-	if from.UserName != "" {
-		return from.UserName
-	}
-
-	return fmt.Sprintf("%s %s", from.FirstName, from.LastName)
 }

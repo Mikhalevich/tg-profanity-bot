@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	amqp "github.com/rabbitmq/amqp091-go"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/messagequeue/rabbit/internal/contract"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
 type ChannelPublisher interface {
@@ -41,18 +41,18 @@ func New(ch ChannelPublisher, queueName string) (*publisher, error) {
 	}, nil
 }
 
-func (p *publisher) ProcessMessage(ctx context.Context, msg *tgbotapi.Message) error {
+func (p *publisher) ProcessMessage(ctx context.Context, info port.MessageInfo) error {
 	ctx, span := tracing.StartSpan(ctx)
 	defer span.End()
 
-	if err := p.publishJSON(ctx, msg, contract.Message); err != nil {
+	if err := p.publishJSON(ctx, info, contract.Message); err != nil {
 		return fmt.Errorf("publish json: %w", err)
 	}
 
 	return nil
 }
 
-func (p *publisher) ProcessCallbackQuery(ctx context.Context, query *tgbotapi.CallbackQuery) error {
+func (p *publisher) ProcessCallbackQuery(ctx context.Context, query port.CallbackQuery) error {
 	ctx, span := tracing.StartSpan(ctx)
 	defer span.End()
 
