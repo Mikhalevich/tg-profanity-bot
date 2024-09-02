@@ -4,20 +4,19 @@ import (
 	"context"
 	"fmt"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
 func (p *processor) UnbanCallbackQuery(
 	ctx context.Context,
-	chatID string,
+	info port.MessageInfo,
 	userID string,
-	msg *tgbotapi.Message,
 ) error {
-	if err := p.banProcessor.Unban(ctx, makeBanID(chatID, userID)); err != nil {
+	if err := p.banProcessor.Unban(ctx, makeBanID(info.ChatID.String(), userID)); err != nil {
 		return fmt.Errorf("unban: %w", err)
 	}
 
-	if err := p.msgSender.Reply(ctx, msg, "user unbanned successfully"); err != nil {
+	if err := p.msgSender.Reply(ctx, info, "user unbanned successfully"); err != nil {
 		return fmt.Errorf("success unban reply: %w", err)
 	}
 

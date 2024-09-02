@@ -6,17 +6,17 @@ import (
 	"fmt"
 	"sync"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	amqp "github.com/rabbitmq/amqp091-go"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/logger"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/messagequeue/rabbit/internal/contract"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
 type MessageProcessor interface {
-	ProcessMessage(ctx context.Context, msg *tgbotapi.Message) error
-	ProcessCallbackQuery(ctx context.Context, query *tgbotapi.CallbackQuery) error
+	ProcessMessage(ctx context.Context, info port.MessageInfo) error
+	ProcessCallbackQuery(ctx context.Context, query port.CallbackQuery) error
 }
 
 type consumer struct {
@@ -107,12 +107,13 @@ func (c *consumer) processUpdate(ctx context.Context, d amqp.Delivery, processor
 }
 
 func (c *consumer) processMessage(ctx context.Context, body []byte, processor MessageProcessor) error {
-	var msg *tgbotapi.Message
-	if err := json.Unmarshal(body, &msg); err != nil {
+	var info port.MessageInfo
+	//nolint:musttag
+	if err := json.Unmarshal(body, &info); err != nil {
 		return fmt.Errorf("json unmarshal: %w", err)
 	}
 
-	if err := processor.ProcessMessage(ctx, msg); err != nil {
+	if err := processor.ProcessMessage(ctx, info); err != nil {
 		return fmt.Errorf("process message: %w", err)
 	}
 
@@ -120,7 +121,8 @@ func (c *consumer) processMessage(ctx context.Context, body []byte, processor Me
 }
 
 func (c *consumer) processCallbackQuery(ctx context.Context, body []byte, processor MessageProcessor) error {
-	var query *tgbotapi.CallbackQuery
+	var query port.CallbackQuery
+	//nolint:musttag
 	if err := json.Unmarshal(body, &query); err != nil {
 		return fmt.Errorf("json unmarshal: %w", err)
 	}

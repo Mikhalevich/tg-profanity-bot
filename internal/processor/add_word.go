@@ -6,49 +6,44 @@ import (
 	"fmt"
 	"strings"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/cmd"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
-func (p *processor) AddWordCommand(ctx context.Context, chatID string, cmdArgs string, msg *tgbotapi.Message) error {
+func (p *processor) AddWordCommand(ctx context.Context, info port.MessageInfo, cmdArgs string) error {
 	word := strings.TrimSpace(cmdArgs)
 
 	return p.addWord(
 		ctx,
-		chatID,
+		info,
 		word,
-		msg,
-		buttonRow(
-			p.revertButton(ctx, cmd.Remove, word),
-		),
+		p.revertButton(ctx, cmd.Remove, word),
 	)
 }
 
-func (p *processor) AddWordCallbackQuery(ctx context.Context, chatID string, word string, msg *tgbotapi.Message) error {
-	return p.addWord(ctx, chatID, word, msg, nil)
+func (p *processor) AddWordCallbackQuery(ctx context.Context, info port.MessageInfo, word string) error {
+	return p.addWord(ctx, info, word, nil)
 }
 
 func (p *processor) addWord(
 	ctx context.Context,
-	chatID string,
+	info port.MessageInfo,
 	word string,
-	msg *tgbotapi.Message,
-	buttons []tgbotapi.InlineKeyboardButton,
+	buttons ...*port.Button,
 ) error {
-	if err := p.wordsUpdater.AddWord(ctx, chatID, word); err != nil {
+	if err := p.wordsUpdater.AddWord(ctx, info.ChatID.String(), word); err != nil {
 		if !p.wordsUpdater.IsNothingUpdatedError(err) {
 			return fmt.Errorf("add word: %w", err)
 		}
 
-		if err := p.msgSender.Reply(ctx, msg, "this word already exists"); err != nil {
+		if err := p.msgSender.Reply(ctx, info, "this word already exists"); err != nil {
 			return fmt.Errorf("reply already exists: %w", err)
 		}
 
 		return nil
 	}
 
-	if err := p.msgSender.Reply(ctx, msg, "words updated successfully", buttons...); err != nil {
+	if err := p.msgSender.Reply(ctx, info, "words updated successfully", buttons...); err != nil {
 		return fmt.Errorf("success reply: %w", err)
 	}
 

@@ -26,9 +26,10 @@ import (
 	"github.com/Mikhalevich/tg-profanity-bot/internal/bot"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
-func MakeProfanityReplacer(cfg config.Profanity, m mangler.Matcher) processor.Mangler {
+func MakeProfanityReplacer(cfg config.Profanity, m mangler.Matcher) port.Mangler {
 	if cfg.Dynamic != "" {
 		return mangler.New(m, replacer.NewDynamic(cfg.Dynamic))
 	}
@@ -98,7 +99,7 @@ func newBotAPI(token string) (*tgbotapi.BotAPI, error) {
 	return api, nil
 }
 
-func makeWordsProviderFromPG(pg *postgres.Postgres, words []string) processor.WordsProvider {
+func makeWordsProviderFromPG(pg *postgres.Postgres, words []string) port.WordsProvider {
 	if pg != nil {
 		return pg
 	}
@@ -106,7 +107,7 @@ func makeWordsProviderFromPG(pg *postgres.Postgres, words []string) processor.Wo
 	return staticwords.New(words)
 }
 
-func makeWordsUpdaterFromPG(pg *postgres.Postgres) processor.WordsUpdater {
+func makeWordsUpdaterFromPG(pg *postgres.Postgres) port.WordsUpdater {
 	if pg != nil {
 		return pg
 	}
@@ -135,7 +136,7 @@ func InitPostgres(cfg config.Postgres) (*postgres.Postgres, func(), error) {
 	}, nil
 }
 
-func makeCommandStorage(cfg config.CommandRedis) (processor.CommandStorage, error) {
+func makeCommandStorage(cfg config.CommandRedis) (port.CommandStorage, error) {
 	if cfg.Addr == "" {
 		return commandstorage.NewNope(), nil
 	}
@@ -157,7 +158,7 @@ func makeCommandStorage(cfg config.CommandRedis) (processor.CommandStorage, erro
 	return commandstorage.NewRedis(rdb, cfg.TTL), nil
 }
 
-func makeBanProcessor(cfg config.BanRedis) (processor.BanProcessor, error) {
+func makeBanProcessor(cfg config.BanRedis) (port.BanProcessor, error) {
 	if cfg.Addr == "" {
 		return banprocessor.NewNope(), nil
 	}

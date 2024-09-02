@@ -4,22 +4,21 @@ import (
 	"context"
 	"fmt"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
 func (p *processor) ViewBannedMsgCallbackQuery(
 	ctx context.Context,
-	chatID string,
+	info port.MessageInfo,
 	msgText string,
-	banMsg *tgbotapi.Message,
 ) error {
-	mangledMsg, err := p.mangler.Mangle(ctx, chatID, msgText)
+	mangledMsg, err := p.mangler.Mangle(ctx, info.ChatID.String(), msgText)
 	if err != nil {
 		return fmt.Errorf("replace msg: %w", err)
 	}
 
 	if mangledMsg == msgText {
-		if err := p.msgSender.Reply(ctx, banMsg, msgText); err != nil {
+		if err := p.msgSender.Reply(ctx, info, msgText); err != nil {
 			return fmt.Errorf("origin reply: %w", err)
 		}
 
@@ -28,11 +27,9 @@ func (p *processor) ViewBannedMsgCallbackQuery(
 
 	if err := p.msgSender.Reply(
 		ctx,
-		banMsg,
+		info,
 		mangledMsg,
-		buttonRow(
-			p.viewOriginMsgButton(ctx, msgText),
-		)...,
+		p.viewOriginMsgButton(ctx, msgText),
 	); err != nil {
 		return fmt.Errorf("mangled reply: %w", err)
 	}

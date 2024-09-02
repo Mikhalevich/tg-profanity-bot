@@ -7,22 +7,23 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
 func (s *msgsender) Reply(
 	ctx context.Context,
-	originMsg *tgbotapi.Message,
+	originMsgInfo port.MessageInfo,
 	msg string,
-	buttons ...tgbotapi.InlineKeyboardButton,
+	buttons ...*port.Button,
 ) error {
 	_, span := tracing.StartSpan(ctx)
 	defer span.End()
 
-	newMsg := tgbotapi.NewMessage(originMsg.Chat.ID, msg)
-	newMsg.ReplyToMessageID = originMsg.MessageID
+	newMsg := tgbotapi.NewMessage(originMsgInfo.ChatID.Int64(), msg)
+	newMsg.ReplyToMessageID = originMsgInfo.MessageID
 
 	if len(buttons) > 0 {
-		newMsg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(buttons)
+		newMsg.ReplyMarkup = buttonsMarkup(buttons)
 	}
 
 	if _, err := s.api.Send(newMsg); err != nil {
