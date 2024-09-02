@@ -108,6 +108,7 @@ func (c *consumer) processUpdate(ctx context.Context, d amqp.Delivery, processor
 
 func (c *consumer) processMessage(ctx context.Context, body []byte, processor MessageProcessor) error {
 	var info port.MessageInfo
+	//nolint:musttag
 	if err := json.Unmarshal(body, &info); err != nil {
 		return fmt.Errorf("json unmarshal: %w", err)
 	}
@@ -121,6 +122,7 @@ func (c *consumer) processMessage(ctx context.Context, body []byte, processor Me
 
 func (c *consumer) processCallbackQuery(ctx context.Context, body []byte, processor MessageProcessor) error {
 	var query port.CallbackQuery
+	//nolint:musttag
 	if err := json.Unmarshal(body, &query); err != nil {
 		return fmt.Errorf("json unmarshal: %w", err)
 	}

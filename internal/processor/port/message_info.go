@@ -7,23 +7,23 @@ import (
 )
 
 type ID struct {
-	IdNum int64
-	IdStr string
+	IDNum int64
+	IDStr string
 }
 
 func NewID(id int64) ID {
 	return ID{
-		IdNum: id,
-		IdStr: strconv.FormatInt(id, 10),
+		IDNum: id,
+		IDStr: strconv.FormatInt(id, 10),
 	}
 }
 
 func (id ID) Int64() int64 {
-	return id.IdNum
+	return id.IDNum
 }
 
 func (id ID) String() string {
-	return id.IdStr
+	return id.IDStr
 }
 
 type MessageInfo struct {

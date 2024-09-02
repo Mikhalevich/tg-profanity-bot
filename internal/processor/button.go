@@ -10,7 +10,11 @@ import (
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
-func (p *processor) makeButton(ctx context.Context, caption string, command port.Command) *tgbotapi.InlineKeyboardButton {
+func (p *processor) makeButton(
+	ctx context.Context,
+	caption string,
+	command port.Command,
+) *tgbotapi.InlineKeyboardButton {
 	id := uuid.NewString()
 
 	if err := p.commandStorage.Set(ctx, id, command); err != nil {
