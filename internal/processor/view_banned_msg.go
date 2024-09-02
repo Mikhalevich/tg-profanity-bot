@@ -29,9 +29,7 @@ func (p *processor) ViewBannedMsgCallbackQuery(
 		ctx,
 		info,
 		mangledMsg,
-		buttonRow(
-			p.viewOriginMsgButton(ctx, msgText),
-		)...,
+		p.viewOriginMsgButton(ctx, msgText),
 	); err != nil {
 		return fmt.Errorf("mangled reply: %w", err)
 	}

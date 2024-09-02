@@ -11,6 +11,8 @@ import (
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
+var _ port.MsgSender = (*msgsender)(nil)
+
 type msgsender struct {
 	api *tgbotapi.BotAPI
 }
@@ -25,7 +27,7 @@ func (s *msgsender) Edit(
 	ctx context.Context,
 	originMsgInfo port.MessageInfo,
 	msg string,
-	buttons ...tgbotapi.InlineKeyboardButton,
+	buttons ...*port.Button,
 ) error {
 	_, span := tracing.StartSpan(ctx)
 	defer span.End()
@@ -45,7 +47,7 @@ func (s *msgsender) Edit(
 func newEditedMessage(
 	originMsgInfo port.MessageInfo,
 	msgText string,
-	buttons []tgbotapi.InlineKeyboardButton,
+	buttons []*port.Button,
 ) *tgbotapi.MessageConfig {
 	formattedMsgText, msgEntities := formatMessage(msgText, originMsgInfo.UserFrom)
 
@@ -53,7 +55,7 @@ func newEditedMessage(
 	newMsg.Entities = msgEntities
 
 	if len(buttons) > 0 {
-		newMsg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(buttons)
+		newMsg.ReplyMarkup = buttonsMarkup(buttons)
 	}
 
 	if originMsgInfo.ReplyToMessageID != 0 {

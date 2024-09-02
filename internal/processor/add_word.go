@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/cmd"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
@@ -19,9 +17,7 @@ func (p *processor) AddWordCommand(ctx context.Context, info port.MessageInfo, c
 		ctx,
 		info,
 		word,
-		buttonRow(
-			p.revertButton(ctx, cmd.Remove, word),
-		),
+		p.revertButton(ctx, cmd.Remove, word),
 	)
 }
 
@@ -33,7 +29,7 @@ func (p *processor) addWord(
 	ctx context.Context,
 	info port.MessageInfo,
 	word string,
-	buttons []tgbotapi.InlineKeyboardButton,
+	buttons ...*port.Button,
 ) error {
 	if err := p.wordsUpdater.AddWord(ctx, info.ChatID.String(), word); err != nil {
 		if !p.wordsUpdater.IsNothingUpdatedError(err) {

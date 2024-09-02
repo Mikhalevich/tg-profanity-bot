@@ -2,17 +2,10 @@ package port
 
 import (
 	"context"
-
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type Mangler interface {
 	Mangle(ctx context.Context, chatID string, msg string) (string, error)
-}
-
-type MsgSender interface {
-	Reply(ctx context.Context, originMsgInfo MessageInfo, msg string, buttons ...tgbotapi.InlineKeyboardButton) error
-	Edit(ctx context.Context, originMsgInfo MessageInfo, msg string, buttons ...tgbotapi.InlineKeyboardButton) error
 }
 
 type WordsProvider interface {
