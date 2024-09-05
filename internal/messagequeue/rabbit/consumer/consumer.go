@@ -1,8 +1,9 @@
 package consumer
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
+	"encoding/gob"
 	"fmt"
 	"sync"
 
@@ -20,11 +21,9 @@ type MessageProcessor interface {
 }
 
 type consumer struct {
-	ch         *amqp.Channel
-	queueName  string
-	logger     logger.Logger
-	workerChan chan amqp.Delivery
-	wg         sync.WaitGroup
+	ch        *amqp.Channel
+	queueName string
+	logger    logger.Logger
 }
 
 func New(ch *amqp.Channel, queueName string, logger logger.Logger) (*consumer, error) {
@@ -34,10 +33,9 @@ func New(ch *amqp.Channel, queueName string, logger logger.Logger) (*consumer, e
 	}
 
 	return &consumer{
-		ch:         ch,
-		queueName:  queueName,
-		logger:     logger,
-		workerChan: make(chan amqp.Delivery),
+		ch:        ch,
+		queueName: queueName,
+		logger:    logger,
 	}, nil
 }
 
@@ -57,30 +55,41 @@ func (c *consumer) Consume(ctx context.Context, workersCount int, processor Mess
 		return fmt.Errorf("consume: %w", err)
 	}
 
-	c.wg.Add(workersCount)
-	c.runWorkers(ctx, workersCount, processor)
+	var (
+		wg         sync.WaitGroup
+		workerChan = make(chan amqp.Delivery)
+	)
+
+	wg.Add(workersCount)
+	c.runWorkers(ctx, workersCount, &wg, workerChan, processor)
 
 	for u := range updates {
-		c.workerChan <- u
+		workerChan <- u
 	}
 
-	close(c.workerChan)
+	close(workerChan)
 
 	c.logger.Debug("stopping workers")
 
-	c.wg.Wait()
+	wg.Wait()
 
 	c.logger.Debug("all workers are stopped")
 
 	return nil
 }
 
-func (c *consumer) runWorkers(ctx context.Context, count int, processor MessageProcessor) {
+func (c *consumer) runWorkers(
+	ctx context.Context,
+	count int,
+	wg *sync.WaitGroup,
+	workerChan <-chan amqp.Delivery,
+	processor MessageProcessor,
+) {
 	for range count {
 		go func() {
-			defer c.wg.Done()
+			defer wg.Done()
 
-			for d := range c.workerChan {
+			for d := range workerChan {
 				if err := c.processUpdate(ctx, d, processor); err != nil {
 					c.logger.WithError(err).Error("process update")
 					continue
@@ -108,9 +117,8 @@ func (c *consumer) processUpdate(ctx context.Context, d amqp.Delivery, processor
 
 func (c *consumer) processMessage(ctx context.Context, body []byte, processor MessageProcessor) error {
 	var info port.MessageInfo
-	//nolint:musttag
-	if err := json.Unmarshal(body, &info); err != nil {
-		return fmt.Errorf("json unmarshal: %w", err)
+	if err := gob.NewDecoder(bytes.NewReader(body)).Decode(&info); err != nil {
+		return fmt.Errorf("gob decode: %w", err)
 	}
 
 	if err := processor.ProcessMessage(ctx, info); err != nil {
@@ -122,9 +130,8 @@ func (c *consumer) processMessage(ctx context.Context, body []byte, processor Me
 
 func (c *consumer) processCallbackQuery(ctx context.Context, body []byte, processor MessageProcessor) error {
 	var query port.CallbackQuery
-	//nolint:musttag
-	if err := json.Unmarshal(body, &query); err != nil {
-		return fmt.Errorf("json unmarshal: %w", err)
+	if err := gob.NewDecoder(bytes.NewReader(body)).Decode(&query); err != nil {
+		return fmt.Errorf("gob decode: %w", err)
 	}
 
 	if err := processor.ProcessCallbackQuery(ctx, query); err != nil {
