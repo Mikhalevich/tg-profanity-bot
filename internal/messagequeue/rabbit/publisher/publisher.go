@@ -1,8 +1,9 @@
 package publisher
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
+	"encoding/gob"
 	"fmt"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -45,8 +46,8 @@ func (p *publisher) ProcessMessage(ctx context.Context, info port.MessageInfo) e
 	ctx, span := tracing.StartSpan(ctx)
 	defer span.End()
 
-	if err := p.publishJSON(ctx, info, contract.Message); err != nil {
-		return fmt.Errorf("publish json: %w", err)
+	if err := p.publishGOB(ctx, info, contract.Message); err != nil {
+		return fmt.Errorf("publish gob: %w", err)
 	}
 
 	return nil
@@ -56,17 +57,17 @@ func (p *publisher) ProcessCallbackQuery(ctx context.Context, query port.Callbac
 	ctx, span := tracing.StartSpan(ctx)
 	defer span.End()
 
-	if err := p.publishJSON(ctx, query, contract.CallbackQuery); err != nil {
-		return fmt.Errorf("publish json: %w", err)
+	if err := p.publishGOB(ctx, query, contract.CallbackQuery); err != nil {
+		return fmt.Errorf("publish gob: %w", err)
 	}
 
 	return nil
 }
 
-func (p *publisher) publishJSON(ctx context.Context, obj any, messageType contract.MessageType) error {
-	b, err := json.Marshal(obj)
-	if err != nil {
-		return fmt.Errorf("json marshal: %w", err)
+func (p *publisher) publishGOB(ctx context.Context, obj any, messageType contract.MessageType) error {
+	var buf bytes.Buffer
+	if err := gob.NewEncoder(&buf).Encode(obj); err != nil {
+		return fmt.Errorf("gob encode: %w", err)
 	}
 
 	if err := p.ch.PublishWithContext(
@@ -77,8 +78,8 @@ func (p *publisher) publishJSON(ctx context.Context, obj any, messageType contra
 		false,
 		amqp.Publishing{
 			DeliveryMode: amqp.Persistent,
-			ContentType:  "application/json",
-			Body:         b,
+			ContentType:  "gob",
+			Body:         buf.Bytes(),
 			Type:         messageType.String(),
 		},
 	); err != nil {

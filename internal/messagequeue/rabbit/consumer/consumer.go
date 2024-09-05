@@ -1,8 +1,9 @@
 package consumer
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
+	"encoding/gob"
 	"fmt"
 	"sync"
 
@@ -108,9 +109,8 @@ func (c *consumer) processUpdate(ctx context.Context, d amqp.Delivery, processor
 
 func (c *consumer) processMessage(ctx context.Context, body []byte, processor MessageProcessor) error {
 	var info port.MessageInfo
-	//nolint:musttag
-	if err := json.Unmarshal(body, &info); err != nil {
-		return fmt.Errorf("json unmarshal: %w", err)
+	if err := gob.NewDecoder(bytes.NewReader(body)).Decode(&info); err != nil {
+		return fmt.Errorf("gob decode: %w", err)
 	}
 
 	if err := processor.ProcessMessage(ctx, info); err != nil {
@@ -122,9 +122,8 @@ func (c *consumer) processMessage(ctx context.Context, body []byte, processor Me
 
 func (c *consumer) processCallbackQuery(ctx context.Context, body []byte, processor MessageProcessor) error {
 	var query port.CallbackQuery
-	//nolint:musttag
-	if err := json.Unmarshal(body, &query); err != nil {
-		return fmt.Errorf("json unmarshal: %w", err)
+	if err := gob.NewDecoder(bytes.NewReader(body)).Decode(&query); err != nil {
+		return fmt.Errorf("gob decode: %w", err)
 	}
 
 	if err := processor.ProcessCallbackQuery(ctx, query); err != nil {
