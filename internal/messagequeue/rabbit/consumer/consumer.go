@@ -21,11 +21,9 @@ type MessageProcessor interface {
 }
 
 type consumer struct {
-	ch         *amqp.Channel
-	queueName  string
-	logger     logger.Logger
-	workerChan chan amqp.Delivery
-	wg         sync.WaitGroup
+	ch        *amqp.Channel
+	queueName string
+	logger    logger.Logger
 }
 
 func New(ch *amqp.Channel, queueName string, logger logger.Logger) (*consumer, error) {
@@ -35,10 +33,9 @@ func New(ch *amqp.Channel, queueName string, logger logger.Logger) (*consumer, e
 	}
 
 	return &consumer{
-		ch:         ch,
-		queueName:  queueName,
-		logger:     logger,
-		workerChan: make(chan amqp.Delivery),
+		ch:        ch,
+		queueName: queueName,
+		logger:    logger,
 	}, nil
 }
 
@@ -58,30 +55,41 @@ func (c *consumer) Consume(ctx context.Context, workersCount int, processor Mess
 		return fmt.Errorf("consume: %w", err)
 	}
 
-	c.wg.Add(workersCount)
-	c.runWorkers(ctx, workersCount, processor)
+	var (
+		wg         sync.WaitGroup
+		workerChan = make(chan amqp.Delivery)
+	)
+
+	wg.Add(workersCount)
+	c.runWorkers(ctx, workersCount, &wg, workerChan, processor)
 
 	for u := range updates {
-		c.workerChan <- u
+		workerChan <- u
 	}
 
-	close(c.workerChan)
+	close(workerChan)
 
 	c.logger.Debug("stopping workers")
 
-	c.wg.Wait()
+	wg.Wait()
 
 	c.logger.Debug("all workers are stopped")
 
 	return nil
 }
 
-func (c *consumer) runWorkers(ctx context.Context, count int, processor MessageProcessor) {
+func (c *consumer) runWorkers(
+	ctx context.Context,
+	count int,
+	wg *sync.WaitGroup,
+	workerChan <-chan amqp.Delivery,
+	processor MessageProcessor,
+) {
 	for range count {
 		go func() {
-			defer c.wg.Done()
+			defer wg.Done()
 
-			for d := range c.workerChan {
+			for d := range workerChan {
 				if err := c.processUpdate(ctx, d, processor); err != nil {
 					c.logger.WithError(err).Error("process update")
 					continue
