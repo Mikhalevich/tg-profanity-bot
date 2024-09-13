@@ -75,19 +75,7 @@ func (p *processor) initCommandRoutes() {
 }
 
 func (p *processor) initButtonsRoutes() {
-	if p.wordsUpdater == nil {
-		return
-	}
-
 	p.buttonsRouter = cmd.Router{
-		cmd.Add: {
-			Handler: p.AddWordCallbackQuery,
-			Perm:    cmd.Admin,
-		},
-		cmd.Remove: {
-			Handler: p.RemoveWordCallbackQuery,
-			Perm:    cmd.Admin,
-		},
 		cmd.ViewOrginMsg: {
 			Handler: p.ViewOriginMsgCallbackQuery,
 			Perm:    cmd.Admin,
@@ -100,5 +88,17 @@ func (p *processor) initButtonsRoutes() {
 			Handler: p.UnbanCallbackQuery,
 			Perm:    cmd.Admin,
 		},
+	}
+
+	if p.wordsUpdater != nil {
+		p.buttonsRouter[cmd.Add] = cmd.Route{
+			Handler: p.AddWordCallbackQuery,
+			Perm:    cmd.Admin,
+		}
+
+		p.buttonsRouter[cmd.Remove] = cmd.Route{
+			Handler: p.RemoveWordCallbackQuery,
+			Perm:    cmd.Admin,
+		}
 	}
 }

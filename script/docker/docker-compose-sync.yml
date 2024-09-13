@@ -4,6 +4,9 @@ services:
     build:
       context: ../../
       dockerfile: script/docker/bot.Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
     networks:
       - bot-net
   jaeger:
@@ -12,6 +15,19 @@ services:
       - "14268:14268"
       - "16686:16686"
       - "4318:4318"
+    networks:
+      - bot-net
+  redis:
+    image: redis:7.0.15
+    ports:
+      - 6379:6379
+    environment:
+      - REDIS_PASSWORD=redis123
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 2s
+      timeout: 2s
+      retries: 10
     networks:
       - bot-net
 networks:

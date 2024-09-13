@@ -53,22 +53,28 @@ func (s *PostgresSuit) TestCreateAndGetWords() {
 
 func (s *PostgresSuit) TestCreateAlreadyExistedChat() {
 	var (
-		ctx    = context.Background()
-		chatID = "chat_id"
-		words  = []string{
+		ctx          = context.Background()
+		chatID       = "chat_id"
+		initialWords = []string{
 			"one",
 			"two",
 			"three",
 		}
+		newWords = []string{
+			"four",
+			"five",
+		}
 	)
 
-	err := s.p.CreateChatWords(ctx, chatID, words)
+	err := s.p.CreateChatWords(ctx, chatID, initialWords)
 	s.Require().NoError(err)
 
-	err = s.p.CreateChatWords(ctx, chatID, words)
-	s.Require().EqualError(err,
-		`insert chat words: ERROR: duplicate key value violates unique constraint "chat_words_pkey" (SQLSTATE 23505)`,
-	)
+	err = s.p.CreateChatWords(ctx, chatID, newWords)
+	s.Require().NoError(err)
+
+	actualWords, err := s.p.ChatWords(ctx, chatID)
+	s.Require().NoError(err)
+	s.Require().ElementsMatch(newWords, actualWords)
 }
 
 func (s *PostgresSuit) TestAddWord() {

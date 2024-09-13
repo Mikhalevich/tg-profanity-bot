@@ -67,7 +67,8 @@ func (p *Postgres) CreateChatWords(ctx context.Context, chatID string, words []s
 
 	res, err := p.db.NamedExecContext(
 		ctx,
-		"INSERT INTO chat_words(chat_id, words) VALUES(:chat_id, :words)",
+		`INSERT INTO chat_words(chat_id, words) VALUES(:chat_id, :words)
+		ON CONFLICT(chat_id) DO UPDATE SET words = :words`,
 		map[string]any{
 			"chat_id": chatID,
 			"words":   payload,
