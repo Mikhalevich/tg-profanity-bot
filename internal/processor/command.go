@@ -46,16 +46,3 @@ func extractCommand(msg string) (cmd.CMD, string) {
 
 	return cmd.CMD(command), args
 }
-
-func (p *processor) GetAllWords(ctx context.Context, info port.MessageInfo, cmdArgs string) error {
-	words, err := p.wordsProvider.ChatWords(ctx, info.ChatID.String())
-	if err != nil {
-		return fmt.Errorf("get chat words: %w", err)
-	}
-
-	if err := p.msgSender.Reply(ctx, info, strings.Join(words, "\n")); err != nil {
-		return fmt.Errorf("msg reply: %w", err)
-	}
-
-	return nil
-}
