@@ -100,7 +100,11 @@ func newBotAPI(token string) (*tgbotapi.BotAPI, error) {
 }
 
 func makeWordsProviderFromPG(pg *postgres.Postgres, words []string) port.WordsProvider {
-	return staticwords.New(words, pg)
+	if pg != nil {
+		return staticwords.New(words, pg)
+	}
+
+	return staticwords.New(words, nil)
 }
 
 func makeWordsUpdaterFromPG(pg *postgres.Postgres) port.WordsUpdater {
