@@ -61,6 +61,16 @@ func (p *processor) initCommandRoutes() {
 			Handler: p.RemoveWordCommand,
 			Perm:    cmd.Admin,
 		}
+
+		p.cmdRouter[cmd.Clear] = cmd.Route{
+			Handler: p.ClearWordsCommand,
+			Perm:    cmd.Admin,
+		}
+
+		p.cmdRouter[cmd.RestoreDefault] = cmd.Route{
+			Handler: p.RestoreDefaultWordsCommand,
+			Perm:    cmd.Admin,
+		}
 	}
 }
 

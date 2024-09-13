@@ -225,3 +225,52 @@ func (s *PostgresSuit) TestRemoveNotExistingWord() {
 		})
 	}
 }
+
+func (s *PostgresSuit) TestClearWords() {
+	var (
+		ctx    = context.Background()
+		chatID = "chat_id"
+
+		tests = []struct {
+			Name         string
+			InitialWords []string
+		}{
+			{
+				Name: "existing words",
+				InitialWords: []string{
+					"one",
+					"two",
+					"three",
+				},
+			},
+			{
+				Name:         "empty slice words",
+				InitialWords: []string{},
+			},
+		}
+	)
+
+	for _, test := range tests {
+		s.Run(test.Name, func() {
+			err := s.p.CreateChatWords(ctx, chatID, test.InitialWords)
+			s.Require().NoError(err)
+
+			err = s.p.ClearWords(ctx, chatID)
+			s.Require().NoError(err)
+
+			actualWords, err := s.p.ChatWords(ctx, chatID)
+			s.Require().NoError(err)
+			s.Require().Len(actualWords, 0)
+		})
+	}
+}
+
+func (s *PostgresSuit) TestClearWordsNothingUpdatedError() {
+	var (
+		ctx    = context.Background()
+		chatID = "chat_id"
+	)
+
+	err := s.p.ClearWords(ctx, chatID)
+	s.Require().EqualError(err, errNothingUpdated.Error())
+}

@@ -10,11 +10,14 @@ type Mangler interface {
 
 type WordsProvider interface {
 	ChatWords(ctx context.Context, chatID string) ([]string, error)
+	InitialWords() []string
 }
 
 type WordsUpdater interface {
 	AddWord(ctx context.Context, chatID string, word string) error
 	RemoveWord(ctx context.Context, chatID string, word string) error
+	ClearWords(ctx context.Context, chatID string) error
+	CreateChatWords(ctx context.Context, chatID string, words []string) error
 	IsNothingUpdatedError(err error) bool
 }
 
