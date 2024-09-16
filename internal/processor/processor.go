@@ -1,7 +1,9 @@
 package processor
 
 import (
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/cbquery"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/cmd"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/router"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
@@ -14,8 +16,8 @@ type processor struct {
 	commandStorage    port.CommandStorage
 	banProcessor      port.BanProcessor
 
-	cmdRouter     cmd.Router
-	buttonsRouter cmd.Router
+	cmdRouter     *router.Router[cmd.CMD]
+	buttonsRouter *router.Router[cbquery.CBQUERY]
 }
 
 func New(
@@ -35,6 +37,8 @@ func New(
 		permissionChecker: permissionChecker,
 		commandStorage:    commandStorage,
 		banProcessor:      banProcessor,
+		cmdRouter:         router.NewRouter[cmd.CMD](),
+		buttonsRouter:     router.NewRouter[cbquery.CBQUERY](),
 	}
 
 	p.initCommandRoutes()
@@ -44,61 +48,59 @@ func New(
 }
 
 func (p *processor) initCommandRoutes() {
-	p.cmdRouter = cmd.Router{
-		cmd.GetAll: {
-			Handler: p.GetAllWords,
-			Perm:    cmd.Admin,
-		},
-	}
+	p.cmdRouter.AddRoute(cmd.GetAll, router.Route{
+		Handler: p.GetAllWords,
+		Perm:    router.Admin,
+	})
 
 	if p.wordsUpdater != nil {
-		p.cmdRouter[cmd.Add] = cmd.Route{
+		p.cmdRouter.AddRoute(cmd.Add, router.Route{
 			Handler: p.AddWordCommand,
-			Perm:    cmd.Admin,
-		}
+			Perm:    router.Admin,
+		})
 
-		p.cmdRouter[cmd.Remove] = cmd.Route{
+		p.cmdRouter.AddRoute(cmd.Remove, router.Route{
 			Handler: p.RemoveWordCommand,
-			Perm:    cmd.Admin,
-		}
+			Perm:    router.Admin,
+		})
 
-		p.cmdRouter[cmd.Clear] = cmd.Route{
+		p.cmdRouter.AddRoute(cmd.ClearAll, router.Route{
 			Handler: p.ClearWordsCommand,
-			Perm:    cmd.Admin,
-		}
+			Perm:    router.Admin,
+		})
 
-		p.cmdRouter[cmd.RestoreDefault] = cmd.Route{
+		p.cmdRouter.AddRoute(cmd.RestoreDefault, router.Route{
 			Handler: p.RestoreDefaultWordsCommand,
-			Perm:    cmd.Admin,
-		}
+			Perm:    router.Admin,
+		})
 	}
 }
 
 func (p *processor) initButtonsRoutes() {
-	p.buttonsRouter = cmd.Router{
-		cmd.ViewOrginMsg: {
-			Handler: p.ViewOriginMsgCallbackQuery,
-			Perm:    cmd.Admin,
-		},
-		cmd.ViewBannedMsg: {
-			Handler: p.ViewBannedMsgCallbackQuery,
-			Perm:    cmd.Admin,
-		},
-		cmd.Unban: {
-			Handler: p.UnbanCallbackQuery,
-			Perm:    cmd.Admin,
-		},
-	}
+	p.buttonsRouter.AddRoute(cbquery.ViewOrginMsg, router.Route{
+		Handler: p.ViewOriginMsgCallbackQuery,
+		Perm:    router.Admin,
+	})
+
+	p.buttonsRouter.AddRoute(cbquery.ViewBannedMsg, router.Route{
+		Handler: p.ViewBannedMsgCallbackQuery,
+		Perm:    router.Admin,
+	})
+
+	p.buttonsRouter.AddRoute(cbquery.Unban, router.Route{
+		Handler: p.UnbanCallbackQuery,
+		Perm:    router.Admin,
+	})
 
 	if p.wordsUpdater != nil {
-		p.buttonsRouter[cmd.Add] = cmd.Route{
+		p.buttonsRouter.AddRoute(cbquery.Add, router.Route{
 			Handler: p.AddWordCallbackQuery,
-			Perm:    cmd.Admin,
-		}
+			Perm:    router.Admin,
+		})
 
-		p.buttonsRouter[cmd.Remove] = cmd.Route{
+		p.buttonsRouter.AddRoute(cbquery.Remove, router.Route{
 			Handler: p.RemoveWordCallbackQuery,
-			Perm:    cmd.Admin,
-		}
+			Perm:    router.Admin,
+		})
 	}
 }

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/cmd"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/cbquery"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
@@ -17,7 +17,7 @@ func (p *processor) AddWordCommand(ctx context.Context, info port.MessageInfo, c
 		ctx,
 		info,
 		word,
-		p.revertButton(ctx, cmd.Remove, word),
+		p.revertButton(ctx, cbquery.Remove, word),
 	)
 }
 

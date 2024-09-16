@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/logger"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/cmd"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/cbquery"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
@@ -31,30 +31,30 @@ func (p *processor) makeButton(
 	}
 }
 
-func (p *processor) revertButton(ctx context.Context, command cmd.CMD, word string) *port.Button {
+func (p *processor) revertButton(ctx context.Context, button cbquery.CBQUERY, word string) *port.Button {
 	return p.makeButton(ctx, "revert", port.Command{
-		CMD:     command.String(),
+		CMD:     button.String(),
 		Payload: []byte(word),
 	})
 }
 
 func (p *processor) viewOriginMsgButton(ctx context.Context, msg string) *port.Button {
 	return p.makeButton(ctx, "view origin msg", port.Command{
-		CMD:     cmd.ViewOrginMsg.String(),
+		CMD:     cbquery.ViewOrginMsg.String(),
 		Payload: []byte(msg),
 	})
 }
 
 func (p *processor) viewBannedMsgButton(ctx context.Context, msg string) *port.Button {
 	return p.makeButton(ctx, "view origin msg", port.Command{
-		CMD:     cmd.ViewBannedMsg.String(),
+		CMD:     cbquery.ViewBannedMsg.String(),
 		Payload: []byte(msg),
 	})
 }
 
 func (p *processor) unbanButton(ctx context.Context, userID string) *port.Button {
 	return p.makeButton(ctx, "unban user", port.Command{
-		CMD:     cmd.Unban.String(),
+		CMD:     cbquery.Unban.String(),
 		Payload: []byte(userID),
 	})
 }

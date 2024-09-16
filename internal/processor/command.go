@@ -16,7 +16,7 @@ func (p *processor) tryProcessCommand(ctx context.Context, info port.MessageInfo
 		return false, nil
 	}
 
-	r, ok := p.cmdRouter[command]
+	r, ok := p.cmdRouter.Route(command)
 	if !ok {
 		return false, nil
 	}

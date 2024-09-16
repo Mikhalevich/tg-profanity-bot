@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/cmd"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/cbquery"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
@@ -21,7 +21,7 @@ func (p *processor) RemoveWordCommand(
 		ctx,
 		info,
 		word,
-		p.revertButton(ctx, cmd.Add, word),
+		p.revertButton(ctx, cbquery.Add, word),
 	)
 }
 
