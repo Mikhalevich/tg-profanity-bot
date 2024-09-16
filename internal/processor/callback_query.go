@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/cmd"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/cbquery"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
@@ -24,7 +24,7 @@ func (p *processor) ProcessCallbackQuery(ctx context.Context, query port.Callbac
 		}
 	}
 
-	r, ok := p.buttonsRouter[cmd.CMD(command.CMD)]
+	r, ok := p.buttonsRouter.Route(cbquery.CBQUERY(command.CMD))
 	if !ok {
 		return fmt.Errorf("unsupported command %s", command.CMD)
 	}

@@ -16,7 +16,7 @@ func (p *processor) tryProcessCommand(ctx context.Context, info port.MessageInfo
 		return false, nil
 	}
 
-	r, ok := p.cmdRouter[command]
+	r, ok := p.cmdRouter.Route(command)
 	if !ok {
 		return false, nil
 	}
@@ -45,17 +45,4 @@ func extractCommand(msg string) (cmd.CMD, string) {
 	command, args, _ := strings.Cut(msg[1:], " ")
 
 	return cmd.CMD(command), args
-}
-
-func (p *processor) GetAllWords(ctx context.Context, info port.MessageInfo, cmdArgs string) error {
-	words, err := p.wordsProvider.ChatWords(ctx, info.ChatID.String())
-	if err != nil {
-		return fmt.Errorf("get chat words: %w", err)
-	}
-
-	if err := p.msgSender.Reply(ctx, info, strings.Join(words, "\n")); err != nil {
-		return fmt.Errorf("msg reply: %w", err)
-	}
-
-	return nil
 }
