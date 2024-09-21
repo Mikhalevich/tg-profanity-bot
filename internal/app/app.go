@@ -87,6 +87,7 @@ func MakeMsgProcessor(
 		permissionchecker.New(api),
 		commandStorage,
 		banProcessor,
+		nil,
 	), cleanup, nil
 }
 
