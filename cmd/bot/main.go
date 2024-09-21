@@ -45,6 +45,7 @@ func runService(cfg config.Bot, l logger.Logger) error {
 		cfg.Profanity,
 		cfg.CommandRedis,
 		cfg.BanRedis,
+		cfg.RankingsRedis,
 		cfg.Updates.Token,
 	)
 	if err != nil {
@@ -93,6 +94,7 @@ func makeProcessor(
 	profanityCfg config.Profanity,
 	commandRedisCfg config.CommandRedis,
 	banCfg config.BanRedis,
+	rankingsCfg config.RankingsRedis,
 	botToken string,
 ) (bot.MessageProcessor, func(), error) {
 	if rabbitCfg.URL != "" {
@@ -104,7 +106,14 @@ func makeProcessor(
 		return msgPublisher, cleanup, nil
 	}
 
-	msgProcessor, cleanup, err := app.MakeMsgProcessor(botToken, postgresCfg, profanityCfg, commandRedisCfg, banCfg)
+	msgProcessor, cleanup, err := app.MakeMsgProcessor(
+		botToken,
+		postgresCfg,
+		profanityCfg,
+		commandRedisCfg,
+		banCfg,
+		rankingsCfg,
+	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("msg processor: %w", err)
 	}

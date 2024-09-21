@@ -80,7 +80,7 @@ func (p *processor) initCommandRoutes() {
 
 	if p.rankings != nil {
 		p.cmdRouter.AddRoute(cmd.Rankings, router.Route{
-			Handler: p.ClearWordsCommand,
+			Handler: p.Rankings,
 			Perm:    router.Member,
 		})
 	}
