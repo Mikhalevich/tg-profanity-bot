@@ -30,7 +30,7 @@ func msgFromRankings(topScores []port.RankingUserScore) string {
 	formattedRankings := make([]string, 0, len(topScores))
 
 	for _, user := range topScores {
-		formattedRankings = append(formattedRankings, fmt.Sprintf("%s: %d", user.User.DisplayName, user.Score))
+		formattedRankings = append(formattedRankings, fmt.Sprintf("%s: %d", user.UserID, user.Score))
 	}
 
 	return strings.Join(formattedRankings, "\n")

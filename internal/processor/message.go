@@ -83,10 +83,7 @@ func (p *processor) updateRankingScore(ctx context.Context, info port.MessageInf
 	if err := p.rankings.AddScore(
 		ctx,
 		makeCurrentMonthRankingKey(info.ChatID.String()),
-		port.RankingUser{
-			ID:          info.UserID.String(),
-			DisplayName: info.UserFrom.String(),
-		},
+		info.UserID.String(),
 	); err != nil {
 		return fmt.Errorf("add rankings score: %w", err)
 	}
