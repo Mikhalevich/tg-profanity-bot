@@ -10,6 +10,8 @@ import (
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
+var _ port.Rankings = (*redisRankings)(nil)
+
 type redisRankings struct {
 	client *redis.Client
 	ttl    time.Duration
