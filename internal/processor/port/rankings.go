@@ -15,6 +15,6 @@ type RankingUserScore struct {
 }
 
 type Rankings interface {
-	AddScore(ctx context.Context, chatID string, userInfo RankingUser) error
-	Top(ctx context.Context, chatID string) ([]RankingUserScore, error)
+	AddScore(ctx context.Context, key string, userInfo RankingUser) error
+	Top(ctx context.Context, key string) ([]RankingUserScore, error)
 }

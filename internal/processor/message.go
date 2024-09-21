@@ -3,7 +3,6 @@ package processor
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
@@ -81,11 +80,9 @@ func (p *processor) processReplace(ctx context.Context, info port.MessageInfo) e
 }
 
 func (p *processor) updateRankingScore(ctx context.Context, info port.MessageInfo) error {
-	rankingKey := fmt.Sprintf("%s_%s", info.ChatID.String(), time.Now().Month().String())
-
 	if err := p.rankings.AddScore(
 		ctx,
-		rankingKey,
+		makeCurrentMonthRankingKey(info.ChatID.String()),
 		port.RankingUser{
 			ID:          info.UserID.String(),
 			DisplayName: info.UserFrom.String(),
