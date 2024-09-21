@@ -1,6 +1,7 @@
 package port
 
 import (
+	"fmt"
 	"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -16,6 +17,18 @@ func NewID(id int64) ID {
 		IDNum: id,
 		IDStr: strconv.FormatInt(id, 10),
 	}
+}
+
+func NewIDFromString(id string) (ID, error) {
+	idNum, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return ID{}, fmt.Errorf("parse int: %w", err)
+	}
+
+	return ID{
+		IDNum: idNum,
+		IDStr: id,
+	}, nil
 }
 
 func (id ID) Int64() int64 {

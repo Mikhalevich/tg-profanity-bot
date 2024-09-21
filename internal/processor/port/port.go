@@ -23,6 +23,7 @@ type WordsUpdater interface {
 
 type PermissionChecker interface {
 	IsAdmin(ctx context.Context, chatID, userID int64) bool
+	UserName(ctx context.Context, chatID, userID int64) (string, error)
 }
 
 type Command struct {

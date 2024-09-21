@@ -15,25 +15,44 @@ func (p *processor) Rankings(ctx context.Context, info port.MessageInfo, cmdArgs
 		return fmt.Errorf("rankings top: %w", err)
 	}
 
-	if err := p.msgSender.Reply(ctx, info, msgFromRankings(topScores)); err != nil {
+	msg, err := p.makeRankingsMsg(ctx, info.ChatID.Int64(), topScores)
+	if err != nil {
+		return fmt.Errorf("make ranking msg: %w", err)
+	}
+
+	if err := p.msgSender.Reply(ctx, info, msg); err != nil {
 		return fmt.Errorf("msg reply: %w", err)
 	}
 
 	return nil
 }
 
-func msgFromRankings(topScores []port.RankingUserScore) string {
+func (p *processor) makeRankingsMsg(
+	ctx context.Context,
+	chatID int64,
+	topScores []port.RankingUserScore,
+) (string, error) {
 	if len(topScores) == 0 {
-		return "rankings are empty"
+		return "rankings are empty", nil
 	}
 
 	formattedRankings := make([]string, 0, len(topScores))
 
-	for _, user := range topScores {
-		formattedRankings = append(formattedRankings, fmt.Sprintf("%s: %d", user.UserID, user.Score))
+	for i, user := range topScores {
+		id, err := port.NewIDFromString(user.UserID)
+		if err != nil {
+			return "", fmt.Errorf("invalid id %q: %w", user.UserID, err)
+		}
+
+		userName, err := p.permissionChecker.UserName(ctx, chatID, id.Int64())
+		if err != nil {
+			return "", fmt.Errorf("get user name: %w", err)
+		}
+
+		formattedRankings = append(formattedRankings, fmt.Sprintf("%d: %s: %d", i+1, userName, user.Score))
 	}
 
-	return strings.Join(formattedRankings, "\n")
+	return strings.Join(formattedRankings, "\n"), nil
 }
 
 func makeRankingsKey(chatID string, month string) string {
