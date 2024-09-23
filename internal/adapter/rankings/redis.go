@@ -2,6 +2,7 @@ package rankings
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -25,8 +26,50 @@ func NewRedisRankings(client *redis.Client, ttl time.Duration) *redisRankings {
 }
 
 func (r *redisRankings) AddScore(ctx context.Context, key string, userID string) error {
-	if err := r.client.ZIncrBy(ctx, key, 1.0, userID).Err(); err != nil {
-		return fmt.Errorf("zincrby: %w", err)
+	if err := r.incrByAlreadyExistingKey(ctx, key, userID); err != nil {
+		if !errors.Is(err, redis.Nil) {
+			return fmt.Errorf("incr by already existing key: %w", err)
+		}
+
+		if err := r.incrByWithExpiration(ctx, key, userID); err != nil {
+			return fmt.Errorf("incr by with expiration: %w", err)
+		}
+
+		return nil
+	}
+
+	return nil
+}
+
+func (r *redisRankings) incrByAlreadyExistingKey(ctx context.Context, key string, userID string) error {
+	if err := r.client.ZAddArgsIncr(ctx, key, redis.ZAddArgs{
+		XX: true,
+		Members: []redis.Z{
+			{
+				Score:  1.0,
+				Member: userID,
+			},
+		},
+	}).Err(); err != nil {
+		return fmt.Errorf("zaddargsincr: %w", err)
+	}
+
+	return nil
+}
+
+func (r *redisRankings) incrByWithExpiration(ctx context.Context, key string, userID string) error {
+	if _, err := r.client.Pipelined(ctx, func(pipe redis.Pipeliner) error {
+		if err := pipe.ZIncrBy(ctx, key, 1.0, userID).Err(); err != nil {
+			return fmt.Errorf("zincrby: %w", err)
+		}
+
+		if err := pipe.Expire(ctx, key, r.ttl).Err(); err != nil {
+			return fmt.Errorf("expire: %w", err)
+		}
+
+		return nil
+	}); err != nil {
+		return fmt.Errorf("pipelined: %w", err)
 	}
 
 	return nil

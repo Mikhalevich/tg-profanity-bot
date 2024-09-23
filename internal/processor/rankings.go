@@ -56,7 +56,7 @@ func (p *processor) makeRankingsMsg(
 }
 
 func makeRankingsKey(chatID string, month string) string {
-	return fmt.Sprintf("rankings_%s_%s", chatID, month)
+	return fmt.Sprintf("rankings:%s_%s", chatID, month)
 }
 
 func makeCurrentMonthRankingKey(chatID string) string {
