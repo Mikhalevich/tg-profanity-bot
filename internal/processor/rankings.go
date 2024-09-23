@@ -10,12 +10,17 @@ import (
 )
 
 func (p *processor) Rankings(ctx context.Context, info port.MessageInfo, cmdArgs string) error {
-	topScores, err := p.rankings.Top(ctx, makeCurrentMonthRankingKey(info.ChatID.String()))
+	var (
+		month       = time.Now().Month().String()
+		rankingsKey = makeRankingsKey(info.ChatID.String(), month)
+	)
+
+	topScores, err := p.rankings.Top(ctx, rankingsKey)
 	if err != nil {
 		return fmt.Errorf("rankings top: %w", err)
 	}
 
-	msg, err := p.makeRankingsMsg(ctx, info.ChatID.Int64(), topScores)
+	msg, err := p.makeRankingsMsg(ctx, month, info.ChatID.Int64(), topScores)
 	if err != nil {
 		return fmt.Errorf("make ranking msg: %w", err)
 	}
@@ -29,14 +34,17 @@ func (p *processor) Rankings(ctx context.Context, info port.MessageInfo, cmdArgs
 
 func (p *processor) makeRankingsMsg(
 	ctx context.Context,
+	month string,
 	chatID int64,
 	topScores []port.RankingUserScore,
 ) (string, error) {
 	if len(topScores) == 0 {
-		return "rankings are empty", nil
+		return fmt.Sprintf("rankings for %s are empty", month), nil
 	}
 
-	formattedRankings := make([]string, 0, len(topScores))
+	formattedRankings := make([]string, 0, len(topScores)+1)
+
+	formattedRankings = append(formattedRankings, month)
 
 	for i, user := range topScores {
 		id, err := port.NewIDFromString(user.UserID)
