@@ -20,6 +20,7 @@ import (
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/mangler/replacer"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/msgsender"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/permissionchecker"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/rankings"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/staticwords"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/storage/postgres"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/logger"
@@ -51,6 +52,7 @@ func MakeMsgProcessor(
 	profanityCfg config.Profanity,
 	commandStorageCfg config.CommandRedis,
 	banCfg config.BanRedis,
+	rankingsCfg config.RankingsRedis,
 ) (bot.MessageProcessor, func(), error) {
 	pg, cleanup, err := InitPostgres(pgCfg)
 	if err != nil {
@@ -79,6 +81,11 @@ func MakeMsgProcessor(
 		return nil, nil, fmt.Errorf("ban processor: %w", err)
 	}
 
+	rankingsProcessor, err := makeRankings(rankingsCfg)
+	if err != nil {
+		return nil, nil, fmt.Errorf("rankings processor: %w", err)
+	}
+
 	return processor.New(
 		replacer,
 		msgsender.New(api),
@@ -87,6 +94,7 @@ func MakeMsgProcessor(
 		permissionchecker.New(api),
 		commandStorage,
 		banProcessor,
+		rankingsProcessor,
 	), cleanup, nil
 }
 
@@ -178,6 +186,29 @@ func makeBanProcessor(cfg config.BanRedis) (port.BanProcessor, error) {
 	}
 
 	return banprocessor.NewRedisBanProcessor(rdb, cfg.BanTTL, cfg.ViolationsPerHour), nil
+}
+
+func makeRankings(cfg config.RankingsRedis) (port.Rankings, error) {
+	if cfg.Addr == "" {
+		//nolint:nilnil
+		return nil, nil
+	}
+
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     cfg.Addr,
+		Password: cfg.Pwd,
+		DB:       cfg.DB,
+	})
+
+	if err := redisotel.InstrumentTracing(rdb); err != nil {
+		return nil, fmt.Errorf("redis instrument tracing: %w", err)
+	}
+
+	if err := rdb.Ping(context.Background()).Err(); err != nil {
+		return nil, fmt.Errorf("redis ping: %w", err)
+	}
+
+	return rankings.NewRedisRankings(rdb, cfg.TTL), nil
 }
 
 // MakeRabbitAMQPChannel make rabbitmq channel and returns channel itself, clearing func and error.

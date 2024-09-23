@@ -44,6 +44,7 @@ func runService(cfg config.Consumer, l logger.Logger) error {
 		cfg.Profanity,
 		cfg.CommandRedis,
 		cfg.BanRedis,
+		cfg.RankingsRedis,
 	)
 	if err != nil {
 		return fmt.Errorf("init msg processor: %w", err)

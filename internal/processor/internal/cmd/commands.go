@@ -8,6 +8,7 @@ const (
 	Remove         CMD = "remove"
 	ClearAll       CMD = "clearall"
 	RestoreDefault CMD = "restoredefault"
+	Rankings       CMD = "rankings"
 )
 
 func (c CMD) String() string {

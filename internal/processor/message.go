@@ -50,6 +50,10 @@ func (p *processor) processReplace(ctx context.Context, info port.MessageInfo) e
 		return nil
 	}
 
+	if err := p.updateRankingScore(ctx, info); err != nil {
+		return fmt.Errorf("update ranking score: %w", err)
+	}
+
 	isBanned, err := p.banProcessor.AddViolation(ctx, makeBanID(info.ChatID.String(), info.UserID.String()))
 	if err != nil {
 		return fmt.Errorf("add violation: %w", err)
@@ -70,6 +74,18 @@ func (p *processor) processReplace(ctx context.Context, info port.MessageInfo) e
 		p.viewOriginMsgButton(ctx, info.Text),
 	); err != nil {
 		return fmt.Errorf("msg edit: %w", err)
+	}
+
+	return nil
+}
+
+func (p *processor) updateRankingScore(ctx context.Context, info port.MessageInfo) error {
+	if err := p.rankings.AddScore(
+		ctx,
+		makeCurrentMonthRankingKey(info.ChatID.String()),
+		info.UserID.String(),
+	); err != nil {
+		return fmt.Errorf("add rankings score: %w", err)
 	}
 
 	return nil

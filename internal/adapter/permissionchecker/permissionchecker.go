@@ -2,6 +2,7 @@ package permissionchecker
 
 import (
 	"context"
+	"fmt"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
@@ -51,4 +52,19 @@ func (m *memberapi) IsAdmin(ctx context.Context, chatID, userID int64) bool {
 	}
 
 	return member.IsAdministrator() || member.IsCreator()
+}
+
+func (m *memberapi) UserName(ctx context.Context, chatID, userID int64) (string, error) {
+	member, err := m.api.GetChatMember(tgbotapi.GetChatMemberConfig{
+		ChatConfigWithUser: tgbotapi.ChatConfigWithUser{
+			ChatID: chatID,
+			UserID: userID,
+		},
+	})
+
+	if err != nil {
+		return "", fmt.Errorf("get chat member: %w", err)
+	}
+
+	return member.User.String(), nil
 }

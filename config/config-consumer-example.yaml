@@ -19,4 +19,9 @@ command_redis:
   pwd: "redis123"
   db: 0
   ttl: 5m
+rankings_redis:
+  addr: "redis:6379"
+  pwd: "redis123"
+  db: 2
+  ttl: 24h
 

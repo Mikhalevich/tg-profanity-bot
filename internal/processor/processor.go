@@ -15,6 +15,7 @@ type processor struct {
 	permissionChecker port.PermissionChecker
 	commandStorage    port.CommandStorage
 	banProcessor      port.BanProcessor
+	rankings          port.Rankings
 
 	cmdRouter     *router.Router[cmd.CMD]
 	buttonsRouter *router.Router[cbquery.CBQUERY]
@@ -28,6 +29,7 @@ func New(
 	permissionChecker port.PermissionChecker,
 	commandStorage port.CommandStorage,
 	banProcessor port.BanProcessor,
+	rankings port.Rankings,
 ) *processor {
 	p := &processor{
 		mangler:           mangler,
@@ -37,6 +39,7 @@ func New(
 		permissionChecker: permissionChecker,
 		commandStorage:    commandStorage,
 		banProcessor:      banProcessor,
+		rankings:          rankings,
 		cmdRouter:         router.NewRouter[cmd.CMD](),
 		buttonsRouter:     router.NewRouter[cbquery.CBQUERY](),
 	}
@@ -72,6 +75,13 @@ func (p *processor) initCommandRoutes() {
 		p.cmdRouter.AddRoute(cmd.RestoreDefault, router.Route{
 			Handler: p.RestoreDefaultWordsCommand,
 			Perm:    router.Admin,
+		})
+	}
+
+	if p.rankings != nil {
+		p.cmdRouter.AddRoute(cmd.Rankings, router.Route{
+			Handler: p.Rankings,
+			Perm:    router.Member,
 		})
 	}
 }

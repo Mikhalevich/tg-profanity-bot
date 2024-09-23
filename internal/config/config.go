@@ -5,25 +5,27 @@ import (
 )
 
 type Bot struct {
-	LogLevel     string           `yaml:"log_level" required:"true"`
-	Tracing      Tracing          `yaml:"tracing" required:"true"`
-	Updates      BotUpdates       `yaml:"bot" required:"true"`
-	Profanity    Profanity        `yaml:"profanity" required:"true"`
-	Rabbit       RabbitMQProducer `yaml:"rabbit"`
-	Postgres     Postgres         `yaml:"postgres"`
-	CommandRedis CommandRedis     `yaml:"command_redis"`
-	BanRedis     BanRedis         `yaml:"ban_redis"`
+	LogLevel      string           `yaml:"log_level" required:"true"`
+	Tracing       Tracing          `yaml:"tracing" required:"true"`
+	Updates       BotUpdates       `yaml:"bot" required:"true"`
+	Profanity     Profanity        `yaml:"profanity" required:"true"`
+	Rabbit        RabbitMQProducer `yaml:"rabbit"`
+	Postgres      Postgres         `yaml:"postgres"`
+	CommandRedis  CommandRedis     `yaml:"command_redis"`
+	BanRedis      BanRedis         `yaml:"ban_redis"`
+	RankingsRedis RankingsRedis    `yaml:"rankings_redis"`
 }
 
 type Consumer struct {
-	LogLevel     string           `yaml:"log_level" required:"true"`
-	Tracing      Tracing          `yaml:"tracing" required:"true"`
-	BotToken     string           `yaml:"bot_token" required:"true"`
-	Profanity    Profanity        `yaml:"profanity" required:"true"`
-	Rabbit       RabbitMQConsumer `yaml:"rabbit" required:"true"`
-	Postgres     Postgres         `yaml:"postgres"`
-	CommandRedis CommandRedis     `yaml:"command_redis"`
-	BanRedis     BanRedis         `yaml:"ban_redis"`
+	LogLevel      string           `yaml:"log_level" required:"true"`
+	Tracing       Tracing          `yaml:"tracing" required:"true"`
+	BotToken      string           `yaml:"bot_token" required:"true"`
+	Profanity     Profanity        `yaml:"profanity" required:"true"`
+	Rabbit        RabbitMQConsumer `yaml:"rabbit" required:"true"`
+	Postgres      Postgres         `yaml:"postgres"`
+	CommandRedis  CommandRedis     `yaml:"command_redis"`
+	BanRedis      BanRedis         `yaml:"ban_redis"`
+	RankingsRedis RankingsRedis    `yaml:"rankings_redis"`
 }
 
 type BotUpdates struct {
@@ -69,4 +71,11 @@ type BanRedis struct {
 	DB                int           `yaml:"db"`
 	BanTTL            time.Duration `yaml:"ban_ttl"`
 	ViolationsPerHour int           `yaml:"violations_per_hour"`
+}
+
+type RankingsRedis struct {
+	Addr string        `yaml:"addr"`
+	Pwd  string        `yaml:"pwd"`
+	DB   int           `yaml:"db"`
+	TTL  time.Duration `yaml:"ttl"`
 }
