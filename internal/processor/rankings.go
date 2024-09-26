@@ -3,15 +3,72 @@ package processor
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
-func (p *processor) Rankings(ctx context.Context, info port.MessageInfo, cmdArgs string) error {
+var (
+	monthInfo = []struct {
+		Long  string
+		Short string
+	}{
+		{
+			Long:  "January",
+			Short: "Jan",
+		},
+		{
+			Long:  "February",
+			Short: "Feb",
+		},
+		{
+			Long:  "March",
+			Short: "Mar",
+		},
+		{
+			Long:  "April",
+			Short: "Apr",
+		},
+		{
+			Long:  "May",
+			Short: "May",
+		},
+		{
+			Long:  "June",
+			Short: "Jun",
+		},
+		{
+			Long:  "July",
+			Short: "Jul",
+		},
+		{
+			Long:  "August",
+			Short: "Aug",
+		},
+		{
+			Long:  "September",
+			Short: "Sep",
+		},
+		{
+			Long:  "October",
+			Short: "Oct",
+		},
+		{
+			Long:  "November",
+			Short: "Nov",
+		},
+		{
+			Long:  "December",
+			Short: "Dec",
+		},
+	}
+)
+
+func (p *processor) Rankings(ctx context.Context, info port.MessageInfo, monthArg string) error {
 	var (
-		month       = time.Now().Month().String()
+		month       = parseMonth(monthArg)
 		rankingsKey = makeRankingsKey(info.ChatID.String(), month)
 	)
 
@@ -30,6 +87,48 @@ func (p *processor) Rankings(ctx context.Context, info port.MessageInfo, cmdArgs
 	}
 
 	return nil
+}
+
+func parseMonth(monthArg string) string {
+	if monthArg == "" {
+		return time.Now().Month().String()
+	}
+
+	if month := parseMonthByNumber(monthArg); month != "" {
+		return month
+	}
+
+	if month := parseMonthByName(monthArg); month != "" {
+		return month
+	}
+
+	return time.Now().Month().String()
+}
+
+func parseMonthByNumber(monthArg string) string {
+	monthNum, err := strconv.ParseInt(monthArg, 10, 64)
+	if err != nil {
+		// skip error
+		return ""
+	}
+
+	if monthNum < 1 || monthNum > 12 {
+		return ""
+	}
+
+	return monthInfo[monthNum-1].Long
+}
+
+func parseMonthByName(monthArg string) string {
+	lowerArg := strings.ToLower(monthArg)
+	for _, m := range monthInfo {
+		if lowerArg == strings.ToLower(m.Long) ||
+			lowerArg == strings.ToLower(m.Short) {
+			return m.Long
+		}
+	}
+
+	return ""
 }
 
 func (p *processor) makeRankingsMsg(
