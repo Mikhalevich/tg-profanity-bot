@@ -14,16 +14,18 @@ func (s *msgsender) Reply(
 	ctx context.Context,
 	originMsgInfo port.MessageInfo,
 	msg string,
-	buttons ...*port.Button,
+	options ...port.Option,
 ) error {
 	_, span := tracing.StartSpan(ctx)
 	defer span.End()
 
+	opts := parseOptions(options)
+
 	newMsg := tgbotapi.NewMessage(originMsgInfo.ChatID.Int64(), msg)
 	newMsg.ReplyToMessageID = originMsgInfo.MessageID
 
-	if len(buttons) > 0 {
-		newMsg.ReplyMarkup = buttonsMarkup(buttons)
+	if len(opts.Buttons) > 0 {
+		newMsg.ReplyMarkup = buttonsMarkup(opts.Buttons)
 	}
 
 	if _, err := s.api.Send(newMsg); err != nil {

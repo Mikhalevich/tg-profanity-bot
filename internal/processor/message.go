@@ -71,7 +71,7 @@ func (p *processor) processReplace(ctx context.Context, info port.MessageInfo) e
 		ctx,
 		info,
 		mangledMsg,
-		p.viewOriginMsgButton(ctx, info.Text),
+		port.WithButton(p.viewOriginMsgButton(ctx, info.Text)),
 	); err != nil {
 		return fmt.Errorf("msg edit: %w", err)
 	}
@@ -96,8 +96,8 @@ func (p *processor) processBan(ctx context.Context, userID string, info port.Mes
 		ctx,
 		info,
 		"user is banned",
-		p.viewBannedMsgButton(ctx, info.Text),
-		p.unbanButton(ctx, userID),
+		port.WithButton(p.viewBannedMsgButton(ctx, info.Text)),
+		port.WithButton(p.unbanButton(ctx, userID)),
 	); err != nil {
 		return fmt.Errorf("msg edit: %w", err)
 	}

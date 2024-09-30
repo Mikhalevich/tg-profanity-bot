@@ -27,21 +27,32 @@ func (s *msgsender) Edit(
 	ctx context.Context,
 	originMsgInfo port.MessageInfo,
 	msg string,
-	buttons ...*port.Button,
+	options ...port.Option,
 ) error {
 	_, span := tracing.StartSpan(ctx)
 	defer span.End()
+
+	opts := parseOptions(options)
 
 	deletedMsg := tgbotapi.NewDeleteMessage(originMsgInfo.ChatID.Int64(), originMsgInfo.MessageID)
 	//nolint:errcheck
 	// disabled due to api delete error
 	s.api.Send(deletedMsg)
 
-	if _, err := s.api.Send(newEditedMessage(originMsgInfo, msg, buttons)); err != nil {
+	if _, err := s.api.Send(newEditedMessage(originMsgInfo, msg, opts.Buttons)); err != nil {
 		return fmt.Errorf("send new: %w", err)
 	}
 
 	return nil
+}
+
+func parseOptions(options []port.Option) port.Options {
+	var defaultOpts port.Options
+	for _, opt := range options {
+		opt(&defaultOpts)
+	}
+
+	return defaultOpts
 }
 
 func newEditedMessage(
