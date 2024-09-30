@@ -21,7 +21,7 @@ func (p *processor) RemoveWordCommand(
 		ctx,
 		info,
 		word,
-		p.revertButton(ctx, cbquery.Add, word),
+		port.WithButton(p.revertButton(ctx, cbquery.Add, word)),
 	)
 }
 
@@ -37,7 +37,7 @@ func (p *processor) removeWord(
 	ctx context.Context,
 	info port.MessageInfo,
 	word string,
-	buttons ...*port.Button,
+	options ...port.Option,
 ) error {
 	if err := p.wordsUpdater.RemoveWord(ctx, info.ChatID.String(), word); err != nil {
 		if !p.wordsUpdater.IsNothingUpdatedError(err) {
@@ -51,7 +51,7 @@ func (p *processor) removeWord(
 		return nil
 	}
 
-	if err := p.msgSender.Reply(ctx, info, "words updated successfully", buttons...); err != nil {
+	if err := p.msgSender.Reply(ctx, info, "words updated successfully", options...); err != nil {
 		return fmt.Errorf("success reply: %w", err)
 	}
 

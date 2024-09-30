@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/msgformatter"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
@@ -77,16 +78,30 @@ func (p *processor) Rankings(ctx context.Context, info port.MessageInfo, monthAr
 		return fmt.Errorf("rankings top: %w", err)
 	}
 
-	msg, err := p.makeRankingsMsg(ctx, month, info.ChatID.Int64(), topScores)
+	msg, format, err := p.makeFormattedRankingsMsg(ctx, month, info.ChatID.Int64(), topScores)
 	if err != nil {
 		return fmt.Errorf("make ranking msg: %w", err)
 	}
 
-	if err := p.msgSender.Reply(ctx, info, msg); err != nil {
+	if err := p.msgSender.Reply(ctx, info, msg, convertFormatToOptions(format)...); err != nil {
 		return fmt.Errorf("msg reply: %w", err)
 	}
 
 	return nil
+}
+
+func convertFormatToOptions(format []port.Format) []port.Option {
+	if len(format) == 0 {
+		return nil
+	}
+
+	options := make([]port.Option, 0, len(format))
+
+	for _, f := range format {
+		options = append(options, port.WithFormat(f))
+	}
+
+	return options
 }
 
 func parseMonth(monthArg string) string {
@@ -131,35 +146,41 @@ func parseMonthByName(monthArg string) string {
 	return ""
 }
 
-func (p *processor) makeRankingsMsg(
+func (p *processor) makeFormattedRankingsMsg(
 	ctx context.Context,
 	month string,
 	chatID int64,
 	topScores []port.RankingUserScore,
-) (string, error) {
+) (string, []port.Format, error) {
 	if len(topScores) == 0 {
-		return fmt.Sprintf("rankings for %s are empty", month), nil
+		return fmt.Sprintf("rankings for %s are empty", month), nil, nil
 	}
 
-	formattedRankings := make([]string, 0, len(topScores)+1)
+	formatter := msgformatter.New(len(topScores) + 1)
 
-	formattedRankings = append(formattedRankings, month)
+	formatter.AddBoldPart(month)
+	formatter.CompleteLine()
 
 	for i, user := range topScores {
 		id, err := port.NewIDFromString(user.UserID)
 		if err != nil {
-			return "", fmt.Errorf("invalid id %q: %w", user.UserID, err)
+			return "", nil, fmt.Errorf("invalid id %q: %w", user.UserID, err)
 		}
 
-		userName, err := p.permissionChecker.UserName(ctx, chatID, id.Int64())
+		userInfo, err := p.permissionChecker.UserInfo(ctx, chatID, id.Int64())
 		if err != nil {
-			return "", fmt.Errorf("get user name: %w", err)
+			return "", nil, fmt.Errorf("get user name: %w", err)
 		}
 
-		formattedRankings = append(formattedRankings, fmt.Sprintf("%d: %s: %d", i+1, userName, user.Score))
+		formatter.AddPlainTextPart(fmt.Sprintf("%d: ", i+1))
+		formatter.AddMentionPart(userInfo.String(), userInfo)
+		formatter.AddPlainTextPart(fmt.Sprintf(": %d", user.Score))
+		formatter.CompleteLine()
 	}
 
-	return strings.Join(formattedRankings, "\n"), nil
+	msg, format := formatter.ResultString()
+
+	return msg, format, nil
 }
 
 func makeRankingsKey(chatID string, month string) string {

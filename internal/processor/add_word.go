@@ -17,7 +17,7 @@ func (p *processor) AddWordCommand(ctx context.Context, info port.MessageInfo, c
 		ctx,
 		info,
 		word,
-		p.revertButton(ctx, cbquery.Remove, word),
+		port.WithButton(p.revertButton(ctx, cbquery.Remove, word)),
 	)
 }
 
@@ -29,7 +29,7 @@ func (p *processor) addWord(
 	ctx context.Context,
 	info port.MessageInfo,
 	word string,
-	buttons ...*port.Button,
+	options ...port.Option,
 ) error {
 	if err := p.wordsUpdater.AddWord(ctx, info.ChatID.String(), word); err != nil {
 		if !p.wordsUpdater.IsNothingUpdatedError(err) {
@@ -43,7 +43,7 @@ func (p *processor) addWord(
 		return nil
 	}
 
-	if err := p.msgSender.Reply(ctx, info, "words updated successfully", buttons...); err != nil {
+	if err := p.msgSender.Reply(ctx, info, "words updated successfully", options...); err != nil {
 		return fmt.Errorf("success reply: %w", err)
 	}
 

@@ -14,16 +14,25 @@ func (s *msgsender) Reply(
 	ctx context.Context,
 	originMsgInfo port.MessageInfo,
 	msg string,
-	buttons ...*port.Button,
+	options ...port.Option,
 ) error {
 	_, span := tracing.StartSpan(ctx)
 	defer span.End()
 
+	var (
+		opts     = makeOptions(options)
+		entities = convertToMessageEntities(opts.Format)
+	)
+
 	newMsg := tgbotapi.NewMessage(originMsgInfo.ChatID.Int64(), msg)
 	newMsg.ReplyToMessageID = originMsgInfo.MessageID
 
-	if len(buttons) > 0 {
-		newMsg.ReplyMarkup = buttonsMarkup(buttons)
+	if len(entities) > 0 {
+		newMsg.Entities = entities
+	}
+
+	if len(opts.Buttons) > 0 {
+		newMsg.ReplyMarkup = buttonsMarkup(opts.Buttons)
 	}
 
 	if _, err := s.api.Send(newMsg); err != nil {
@@ -31,4 +40,23 @@ func (s *msgsender) Reply(
 	}
 
 	return nil
+}
+
+func convertToMessageEntities(format []port.Format) []tgbotapi.MessageEntity {
+	if len(format) == 0 {
+		return nil
+	}
+
+	entities := make([]tgbotapi.MessageEntity, 0, len(format))
+
+	for _, f := range format {
+		entities = append(entities, tgbotapi.MessageEntity{
+			Type:   f.Type.String(),
+			Offset: f.Offset,
+			Length: f.Length,
+			User:   f.User,
+		})
+	}
+
+	return entities
 }
