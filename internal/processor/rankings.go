@@ -78,7 +78,7 @@ func (p *processor) Rankings(ctx context.Context, info port.MessageInfo, monthAr
 		return fmt.Errorf("rankings top: %w", err)
 	}
 
-	msg, format, err := p.makeRankingsMsg(ctx, month, info.ChatID.Int64(), topScores)
+	msg, format, err := p.makeFormattedRankingsMsg(ctx, month, info.ChatID.Int64(), topScores)
 	if err != nil {
 		return fmt.Errorf("make ranking msg: %w", err)
 	}
@@ -146,7 +146,7 @@ func parseMonthByName(monthArg string) string {
 	return ""
 }
 
-func (p *processor) makeRankingsMsg(
+func (p *processor) makeFormattedRankingsMsg(
 	ctx context.Context,
 	month string,
 	chatID int64,
