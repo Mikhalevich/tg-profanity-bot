@@ -32,7 +32,7 @@ func (s *msgsender) Edit(
 	_, span := tracing.StartSpan(ctx)
 	defer span.End()
 
-	opts := parseOptions(options)
+	opts := makeOptions(options)
 
 	deletedMsg := tgbotapi.NewDeleteMessage(originMsgInfo.ChatID.Int64(), originMsgInfo.MessageID)
 	//nolint:errcheck
@@ -46,7 +46,7 @@ func (s *msgsender) Edit(
 	return nil
 }
 
-func parseOptions(options []port.Option) port.Options {
+func makeOptions(options []port.Option) port.Options {
 	var defaultOpts port.Options
 	for _, opt := range options {
 		opt(&defaultOpts)

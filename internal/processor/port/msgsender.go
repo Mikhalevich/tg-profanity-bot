@@ -8,6 +8,10 @@ import (
 
 type FormatType string
 
+func (f FormatType) String() string {
+	return string(f)
+}
+
 const (
 	FormatTypeBold    FormatType = "bold"
 	FormatTypeMention FormatType = "text_mention"
