@@ -2,6 +2,8 @@ package port
 
 import (
 	"context"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type Mangler interface {
@@ -23,7 +25,7 @@ type WordsUpdater interface {
 
 type PermissionChecker interface {
 	IsAdmin(ctx context.Context, chatID, userID int64) bool
-	UserName(ctx context.Context, chatID, userID int64) (string, error)
+	UserInfo(ctx context.Context, chatID, userID int64) (*tgbotapi.User, error)
 }
 
 type Command struct {

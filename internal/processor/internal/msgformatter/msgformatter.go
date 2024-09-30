@@ -5,6 +5,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type MsgFormatter struct {
@@ -35,6 +36,19 @@ func (mf *MsgFormatter) AddBoldPart(part string) {
 		Type:   port.FormatTypeBold,
 		Offset: offset,
 		Length: partLen,
+	})
+}
+
+func (mf *MsgFormatter) AddMentionPart(part string, user *tgbotapi.User) {
+	offset := mf.offset
+	mf.AddPlainTextPart(part)
+	partLen := mf.offset - offset
+
+	mf.format = append(mf.format, port.Format{
+		Type:   port.FormatTypeMention,
+		Offset: offset,
+		Length: partLen,
+		User:   user,
 	})
 }
 

@@ -167,13 +167,13 @@ func (p *processor) makeRankingsMsg(
 			return "", nil, fmt.Errorf("invalid id %q: %w", user.UserID, err)
 		}
 
-		userName, err := p.permissionChecker.UserName(ctx, chatID, id.Int64())
+		userInfo, err := p.permissionChecker.UserInfo(ctx, chatID, id.Int64())
 		if err != nil {
 			return "", nil, fmt.Errorf("get user name: %w", err)
 		}
 
 		formatter.AddPlainTextPart(fmt.Sprintf("%d: ", i+1))
-		formatter.AddBoldPart(userName)
+		formatter.AddMentionPart(userInfo.String(), userInfo)
 		formatter.AddPlainTextPart(fmt.Sprintf(": %d", user.Score))
 		formatter.CompleteLine()
 	}

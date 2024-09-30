@@ -54,7 +54,7 @@ func (m *memberapi) IsAdmin(ctx context.Context, chatID, userID int64) bool {
 	return member.IsAdministrator() || member.IsCreator()
 }
 
-func (m *memberapi) UserName(ctx context.Context, chatID, userID int64) (string, error) {
+func (m *memberapi) UserInfo(ctx context.Context, chatID, userID int64) (*tgbotapi.User, error) {
 	member, err := m.api.GetChatMember(tgbotapi.GetChatMemberConfig{
 		ChatConfigWithUser: tgbotapi.ChatConfigWithUser{
 			ChatID: chatID,
@@ -63,8 +63,8 @@ func (m *memberapi) UserName(ctx context.Context, chatID, userID int64) (string,
 	})
 
 	if err != nil {
-		return "", fmt.Errorf("get chat member: %w", err)
+		return nil, fmt.Errorf("get chat member: %w", err)
 	}
 
-	return member.User.String(), nil
+	return member.User, nil
 }
