@@ -17,8 +17,8 @@ import (
 type RedisSuit struct {
 	*suite.Suite
 	client   redis.UniversalClient
-	rankings *redisRankings
 	cleanup  func() error
+	rankings *redisRankings
 }
 
 func TestRedisSuit(t *testing.T) {
@@ -49,9 +49,6 @@ func (s *RedisSuit) TearDownTest() {
 	if err := s.client.FlushDB(context.Background()).Err(); err != nil {
 		s.FailNow("clear all keys", err)
 	}
-}
-
-func (s *RedisSuit) TearDownSubTest() {
 }
 
 func redisConnection() (*redis.Client, func() error, error) {
