@@ -14,11 +14,11 @@ import (
 var _ port.Rankings = (*redisRankings)(nil)
 
 type redisRankings struct {
-	client *redis.Client
+	client redis.UniversalClient
 	ttl    time.Duration
 }
 
-func NewRedisRankings(client *redis.Client, ttl time.Duration) *redisRankings {
+func NewRedisRankings(client redis.UniversalClient, ttl time.Duration) *redisRankings {
 	return &redisRankings{
 		client: client,
 		ttl:    ttl,
@@ -78,6 +78,11 @@ func (r *redisRankings) incrByWithExpiration(ctx context.Context, key string, us
 func (r *redisRankings) Top(ctx context.Context, key string) ([]port.RankingUserScore, error) {
 	rawScores, err := r.client.ZRevRangeWithScores(ctx, key, 0, -1).Result()
 	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			// key does not exists
+			return nil, nil
+		}
+
 		return nil, fmt.Errorf("zrevrangewithscores: %w", err)
 	}
 

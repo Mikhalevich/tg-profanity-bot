@@ -14,11 +14,11 @@ import (
 )
 
 type redisStorage struct {
-	client *redis.Client
+	client redis.UniversalClient
 	ttl    time.Duration
 }
 
-func NewRedis(client *redis.Client, ttl time.Duration) *redisStorage {
+func NewRedis(client redis.UniversalClient, ttl time.Duration) *redisStorage {
 	return &redisStorage{
 		client: client,
 		ttl:    ttl,

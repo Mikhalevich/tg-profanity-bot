@@ -67,7 +67,7 @@ func connectToDatabase() (*sql.DB, func() error, error) {
 	}
 
 	if err := pool.Client.Ping(); err != nil {
-		return nil, nil, fmt.Errorf("connect to Docker: %w", err)
+		return nil, nil, fmt.Errorf("connect to docker: %w", err)
 	}
 
 	resource, err := pool.RunWithOptions(&dockertest.RunOptions{
@@ -85,6 +85,10 @@ func connectToDatabase() (*sql.DB, func() error, error) {
 			Name: "no",
 		}
 	})
+
+	if err != nil {
+		return nil, nil, fmt.Errorf("run docker: %w", err)
+	}
 
 	var db *sql.DB
 
