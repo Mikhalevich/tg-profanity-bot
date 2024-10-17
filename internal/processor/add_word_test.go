@@ -20,11 +20,6 @@ func (s *ProcessorSuit) TestCommandWordsUpdaterError() {
 		unexpectedErr       = errors.New("some error")
 	)
 
-	s.commandStorage.EXPECT().Set(ctx, gomock.Any(), port.Command{
-		CMD:     cbquery.Remove.String(),
-		Payload: []byte(word),
-	})
-
 	s.wordsUpdater.EXPECT().AddWord(ctx, "456", word).Return(unexpectedErr)
 
 	s.wordsUpdater.EXPECT().IsNothingUpdatedError(unexpectedErr).Return(false)
@@ -76,11 +71,6 @@ func (s *ProcessorSuit) TestCommandWordAlreadyExists() {
 		unexpectedErr = errors.New("already exists")
 	)
 
-	s.commandStorage.EXPECT().Set(ctx, gomock.Any(), port.Command{
-		CMD:     cbquery.Remove.String(),
-		Payload: []byte(word),
-	})
-
 	s.wordsUpdater.EXPECT().AddWord(ctx, "456", word).Return(unexpectedErr)
 
 	s.wordsUpdater.EXPECT().IsNothingUpdatedError(unexpectedErr).Return(true)
@@ -116,6 +106,29 @@ func (s *ProcessorSuit) TestCommandWordsUpdatedSuccessfully() {
 	s.msgSender.EXPECT().Reply(ctx, msgInfo, "words updated successfully", gomock.Any())
 
 	err := s.processor.AddWordCommand(ctx, msgInfo, word)
+
+	s.Require().NoError(err)
+}
+
+func (s *ProcessorSuit) TestCallbackQueryWordsUpdatedSuccessfully() {
+	var (
+		ctx             = context.Background()
+		messageID       = 123
+		chatID    int64 = 456
+		userID    int64 = 789
+		word            = "word"
+		msgInfo         = port.MessageInfo{
+			MessageID: messageID,
+			ChatID:    port.NewID(chatID),
+			UserID:    port.NewID(userID),
+		}
+	)
+
+	s.wordsUpdater.EXPECT().AddWord(ctx, "456", word).Return(nil)
+
+	s.msgSender.EXPECT().Reply(ctx, msgInfo, "words updated successfully", gomock.Any())
+
+	err := s.processor.AddWordCallbackQuery(ctx, msgInfo, word)
 
 	s.Require().NoError(err)
 }
