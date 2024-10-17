@@ -62,7 +62,7 @@ lint: install-linter
 tools: install-linter
 	@if [ ! -f $(GOBIN)/mockgen ]; then\
 		echo "Installing mockgen";\
-		GOBIN=$(GOBIN) go install github.com/golang/mock/mockgen;\
+		GOBIN=$(GOBIN) go install github.com/golang/mock/mockgen@v1.6.0;\
 	fi
 
 .PHONY: generate
