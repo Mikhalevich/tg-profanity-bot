@@ -1,6 +1,7 @@
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 ROOT := $(dir $(MKFILE_PATH))
 GOBIN ?= $(ROOT)/tools/bin
+ENV_PATH = PATH=$(GOBIN):$(PATH)
 BIN_PATH ?= $(ROOT)/bin
 LINTER_NAME := golangci-lint
 LINTER_VERSION := v1.60.2
@@ -56,3 +57,14 @@ install-linter:
 .PHONY: lint
 lint: install-linter
 	$(GOBIN)/$(LINTER_VERSION)/$(LINTER_NAME) run --config .golangci.yml
+
+.PHONY: tools
+tools: install-linter
+	@if [ ! -f $(GOBIN)/mockgen ]; then\
+		echo "Installing mockgen";\
+		GOBIN=$(GOBIN) go install github.com/golang/mock/mockgen;\
+	fi
+
+.PHONY: generate
+generate: tools
+	$(ENV_PATH) go generate ./...
