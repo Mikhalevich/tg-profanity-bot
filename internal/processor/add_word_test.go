@@ -30,7 +30,7 @@ func (s *ProcessorSuit) TestCommandWordsUpdaterError() {
 		UserID:    port.NewID(userID),
 	}, word)
 
-	s.Require().Error(err, "add word: some error")
+	s.Require().EqualError(err, "add word: some error")
 }
 
 func (s *ProcessorSuit) TestCallbackQueryWordsUpdaterError() {
@@ -53,7 +53,7 @@ func (s *ProcessorSuit) TestCallbackQueryWordsUpdaterError() {
 		UserID:    port.NewID(userID),
 	}, word)
 
-	s.Require().Error(err, "add word: some error")
+	s.Require().EqualError(err, "add word: some error")
 }
 
 func (s *ProcessorSuit) TestCommandWordAlreadyExists() {
@@ -80,6 +80,32 @@ func (s *ProcessorSuit) TestCommandWordAlreadyExists() {
 	err := s.processor.AddWordCommand(ctx, msgInfo, word)
 
 	s.Require().NoError(err)
+}
+
+func (s *ProcessorSuit) TestCommandWordAlreadyExistsReplyError() {
+	var (
+		ctx             = context.Background()
+		messageID       = 123
+		chatID    int64 = 456
+		userID    int64 = 789
+		word            = "word"
+		msgInfo         = port.MessageInfo{
+			MessageID: messageID,
+			ChatID:    port.NewID(chatID),
+			UserID:    port.NewID(userID),
+		}
+		unexpectedErr = errors.New("already exists")
+	)
+
+	s.wordsUpdater.EXPECT().AddWord(ctx, "456", word).Return(unexpectedErr)
+
+	s.wordsUpdater.EXPECT().IsNothingUpdatedError(unexpectedErr).Return(true)
+
+	s.msgSender.EXPECT().Reply(ctx, msgInfo, "this word already exists").Return(errors.New("reply error"))
+
+	err := s.processor.AddWordCommand(ctx, msgInfo, word)
+
+	s.Require().EqualError(err, "reply already exists: reply error")
 }
 
 func (s *ProcessorSuit) TestCommandWordsUpdatedSuccessfully() {
