@@ -269,3 +269,59 @@ func (s *ProcessorSuit) TestRemoveWordCallbackQuerySuccessReply() {
 
 	s.Require().NoError(err)
 }
+
+func (s *ProcessorSuit) TestRemoveWordCommandWordWithSpacesSuccessReply() {
+	var (
+		ctx             = context.Background()
+		messageID       = 987
+		chatID    int64 = 654
+		userID    int64 = 321
+		msgInfo         = port.MessageInfo{
+			MessageID: messageID,
+			ChatID:    port.NewID(chatID),
+			UserID:    port.NewID(userID),
+		}
+		spacesWord  = " word_to_remove "
+		trimmedWord = "word_to_remove"
+	)
+
+	s.commandStorage.EXPECT().Set(ctx, gomock.Any(), port.Command{
+		CMD:     cbquery.Add.String(),
+		Payload: []byte(trimmedWord),
+	})
+
+	s.wordsUpdater.EXPECT().RemoveWord(ctx, "654", trimmedWord).Return(nil)
+
+	s.msgSender.EXPECT().
+		Reply(ctx, msgInfo, "words updated successfully", gomock.Any()).
+		Return(nil)
+
+	err := s.processor.RemoveWordCommand(ctx, msgInfo, spacesWord)
+
+	s.Require().NoError(err)
+}
+
+func (s *ProcessorSuit) TestRemoveWordCallbackQueryWordWithSpacesSuccessReply() {
+	var (
+		ctx             = context.Background()
+		messageID       = 987
+		chatID    int64 = 654
+		userID    int64 = 321
+		msgInfo         = port.MessageInfo{
+			MessageID: messageID,
+			ChatID:    port.NewID(chatID),
+			UserID:    port.NewID(userID),
+		}
+		spacesWord = " word_to_remove "
+	)
+
+	s.wordsUpdater.EXPECT().RemoveWord(ctx, "654", spacesWord).Return(nil)
+
+	s.msgSender.EXPECT().
+		Reply(ctx, msgInfo, "words updated successfully", gomock.Any()).
+		Return(nil)
+
+	err := s.processor.RemoveWordCallbackQuery(ctx, msgInfo, spacesWord)
+
+	s.Require().NoError(err)
+}
