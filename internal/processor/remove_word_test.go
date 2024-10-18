@@ -20,11 +20,6 @@ func (s *ProcessorSuit) TestRemoveWordCommandWordsUpdaterError() {
 		unexpectedErr       = errors.New("some error")
 	)
 
-	s.commandStorage.EXPECT().Set(ctx, gomock.Any(), port.Command{
-		CMD:     cbquery.Add.String(),
-		Payload: []byte(word),
-	})
-
 	s.wordsUpdater.EXPECT().RemoveWord(ctx, "654", word).Return(unexpectedErr)
 
 	s.wordsUpdater.EXPECT().IsNothingUpdatedError(unexpectedErr).Return(false)
@@ -75,11 +70,6 @@ func (s *ProcessorSuit) TestRemoveWordCommandAlreadyExistsError() {
 		word          = "word_to_remove"
 		unexpectedErr = errors.New("some error")
 	)
-
-	s.commandStorage.EXPECT().Set(ctx, gomock.Any(), port.Command{
-		CMD:     cbquery.Add.String(),
-		Payload: []byte(word),
-	})
 
 	s.wordsUpdater.EXPECT().RemoveWord(ctx, "654", word).Return(unexpectedErr)
 
@@ -133,11 +123,6 @@ func (s *ProcessorSuit) TestRemoveWordCommandAlreadyExistsReplyError() {
 		unexpectedErr = errors.New("some error")
 	)
 
-	s.commandStorage.EXPECT().Set(ctx, gomock.Any(), port.Command{
-		CMD:     cbquery.Add.String(),
-		Payload: []byte(word),
-	})
-
 	s.wordsUpdater.EXPECT().RemoveWord(ctx, "654", word).Return(unexpectedErr)
 
 	s.wordsUpdater.EXPECT().IsNothingUpdatedError(unexpectedErr).Return(true)
@@ -189,12 +174,12 @@ func (s *ProcessorSuit) TestRemoveWordCommandReplyError() {
 		word = "word_to_remove"
 	)
 
+	s.wordsUpdater.EXPECT().RemoveWord(ctx, "654", word).Return(nil)
+
 	s.commandStorage.EXPECT().Set(ctx, gomock.Any(), port.Command{
 		CMD:     cbquery.Add.String(),
 		Payload: []byte(word),
 	})
-
-	s.wordsUpdater.EXPECT().RemoveWord(ctx, "654", word).Return(nil)
 
 	s.msgSender.EXPECT().
 		Reply(ctx, msgInfo, "words updated successfully", gomock.Any()).
@@ -222,7 +207,7 @@ func (s *ProcessorSuit) TestRemoveWordCallbackQueryReplyError() {
 	s.wordsUpdater.EXPECT().RemoveWord(ctx, "654", word).Return(nil)
 
 	s.msgSender.EXPECT().
-		Reply(ctx, msgInfo, "words updated successfully", nil).
+		Reply(ctx, msgInfo, "words updated successfully", gomock.Any()).
 		Return(errors.New("some reply error"))
 
 	err := s.processor.RemoveWordCallbackQuery(ctx, msgInfo, word)

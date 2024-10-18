@@ -29,13 +29,15 @@ func (p *processor) AddWordCallbackQuery(ctx context.Context, info port.MessageI
 		ctx,
 		info,
 		word,
-		func() []port.Option {
-			return nil
-		},
+		nopeDelayedOption,
 	)
 }
 
 type delayedOption func() []port.Option
+
+func nopeDelayedOption() []port.Option {
+	return nil
+}
 
 func (p *processor) addWord(
 	ctx context.Context,
