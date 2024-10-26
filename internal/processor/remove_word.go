@@ -1,4 +1,3 @@
-//nolint:dupl
 package processor
 
 import (
@@ -21,7 +20,11 @@ func (p *processor) RemoveWordCommand(
 		ctx,
 		info,
 		word,
-		port.WithButton(p.revertButton(ctx, cbquery.Add, word)),
+		func() []port.Option {
+			return []port.Option{
+				port.WithButton(p.revertButton(ctx, cbquery.Add, word)),
+			}
+		},
 	)
 }
 
@@ -30,14 +33,19 @@ func (p *processor) RemoveWordCallbackQuery(
 	info port.MessageInfo,
 	word string,
 ) error {
-	return p.removeWord(ctx, info, word, nil)
+	return p.removeWord(
+		ctx,
+		info,
+		word,
+		nopeDelayedOption,
+	)
 }
 
 func (p *processor) removeWord(
 	ctx context.Context,
 	info port.MessageInfo,
 	word string,
-	options ...port.Option,
+	options delayedOption,
 ) error {
 	if err := p.wordsUpdater.RemoveWord(ctx, info.ChatID.String(), word); err != nil {
 		if !p.wordsUpdater.IsNothingUpdatedError(err) {
@@ -51,7 +59,7 @@ func (p *processor) removeWord(
 		return nil
 	}
 
-	if err := p.msgSender.Reply(ctx, info, "words updated successfully", options...); err != nil {
+	if err := p.msgSender.Reply(ctx, info, "words updated successfully", options()...); err != nil {
 		return fmt.Errorf("success reply: %w", err)
 	}
 
