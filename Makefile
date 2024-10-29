@@ -19,7 +19,7 @@ test:
 
 .PHONY: bench
 bench:
-	go test -bench=. ./...
+	go test -bench=. -benchmem ./...
 
 .PHONY: run-bot
 run-bot:
