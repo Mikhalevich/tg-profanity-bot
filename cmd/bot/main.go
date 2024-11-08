@@ -7,12 +7,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/bot"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/app/bot"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/app/messagequeue/rabbit/publisher"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/infra"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/infra/logger"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/infra/tracing"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/messagequeue/rabbit/publisher"
 )
 
 func main() {
