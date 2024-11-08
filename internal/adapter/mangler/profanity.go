@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/mangler/internal/position"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/infra/tracing"
 )
 
 type Matcher interface {

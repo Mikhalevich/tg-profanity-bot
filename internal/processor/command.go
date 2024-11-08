@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/infra/tracing"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/cmd"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )

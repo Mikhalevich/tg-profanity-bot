@@ -7,21 +7,21 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/app"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/app/logger"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/app/messagequeue/rabbit/consumer"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/messagequeue/rabbit/consumer"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/infra"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/infra/logger"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/infra/tracing"
 )
 
 func main() {
 	var cfg config.Consumer
-	if err := app.LoadConfig(&cfg); err != nil {
+	if err := infra.LoadConfig(&cfg); err != nil {
 		logger.StdLogger().WithError(err).Error("failed to load config")
 		os.Exit(1)
 	}
 
-	l, err := app.SetupLogger(cfg.LogLevel)
+	l, err := infra.SetupLogger(cfg.LogLevel)
 	if err != nil {
 		logger.StdLogger().WithError(err).Error("failed to setup logger")
 		os.Exit(1)
@@ -38,7 +38,7 @@ func runService(cfg config.Consumer, l logger.Logger) error {
 		return fmt.Errorf("setup tracer: %w", err)
 	}
 
-	msgProcessor, cleanup, err := app.MakeMsgProcessor(
+	msgProcessor, cleanup, err := infra.MakeMsgProcessor(
 		cfg.BotToken,
 		cfg.Postgres,
 		cfg.Profanity,
@@ -52,7 +52,7 @@ func runService(cfg config.Consumer, l logger.Logger) error {
 
 	defer cleanup()
 
-	ch, channelCleanup, err := app.MakeRabbitAMQPChannel(cfg.Rabbit.URL)
+	ch, channelCleanup, err := infra.MakeRabbitAMQPChannel(cfg.Rabbit.URL)
 	if err != nil {
 		return fmt.Errorf("init rabbitmq channel: %w", err)
 	}

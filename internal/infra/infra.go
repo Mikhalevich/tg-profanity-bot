@@ -1,4 +1,4 @@
-package app
+package infra
 
 import (
 	"context"
@@ -23,9 +23,9 @@ import (
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/rankings"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/staticwords"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/adapter/storage/postgres"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/app/logger"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/bot"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/app/bot"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/infra/logger"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
