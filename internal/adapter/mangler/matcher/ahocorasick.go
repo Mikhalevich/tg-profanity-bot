@@ -5,7 +5,7 @@ import (
 
 	"github.com/cloudflare/ahocorasick"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/infra/tracing"
 )
 
 type ahocorasickMatcher struct {

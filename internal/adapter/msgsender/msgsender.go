@@ -7,7 +7,7 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/infra/tracing"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 

@@ -8,7 +8,7 @@ import (
 
 	amqp "github.com/rabbitmq/amqp091-go"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/infra/tracing"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/messagequeue/rabbit/internal/contract"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )

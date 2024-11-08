@@ -7,22 +7,22 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/app"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/app/logger"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/app/tracing"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/bot"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/infra"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/infra/logger"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/infra/tracing"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/messagequeue/rabbit/publisher"
 )
 
 func main() {
 	var cfg config.Bot
-	if err := app.LoadConfig(&cfg); err != nil {
+	if err := infra.LoadConfig(&cfg); err != nil {
 		logger.StdLogger().WithError(err).Error("failed to load config")
 		os.Exit(1)
 	}
 
-	l, err := app.SetupLogger(cfg.LogLevel)
+	l, err := infra.SetupLogger(cfg.LogLevel)
 	if err != nil {
 		logger.StdLogger().WithError(err).Error("failed to setup logger")
 		os.Exit(1)
@@ -106,7 +106,7 @@ func makeProcessor(
 		return msgPublisher, cleanup, nil
 	}
 
-	msgProcessor, cleanup, err := app.MakeMsgProcessor(
+	msgProcessor, cleanup, err := infra.MakeMsgProcessor(
 		botToken,
 		postgresCfg,
 		profanityCfg,
@@ -122,7 +122,7 @@ func makeProcessor(
 }
 
 func makeRabbitPublisher(rabbitCfg config.RabbitMQProducer) (bot.MessageProcessor, func(), error) {
-	ch, cleanup, err := app.MakeRabbitAMQPChannel(rabbitCfg.URL)
+	ch, cleanup, err := infra.MakeRabbitAMQPChannel(rabbitCfg.URL)
 	if err != nil {
 		return nil, nil, fmt.Errorf("rabbit channel: %w", err)
 	}

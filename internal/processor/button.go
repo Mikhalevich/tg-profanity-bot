@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/Mikhalevich/tg-profanity-bot/internal/app/logger"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/infra/logger"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/internal/cbquery"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
