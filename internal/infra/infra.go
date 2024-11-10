@@ -27,6 +27,7 @@ import (
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/infra/logger"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/msgprocessor"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
@@ -54,6 +55,43 @@ func MakeMsgProcessor(
 	banCfg config.BanRedis,
 	rankingsCfg config.RankingsRedis,
 ) (bot.MessageProcessor, func(), error) {
+	api, err := newBotAPI(botToken)
+	if err != nil {
+		return nil, nil, fmt.Errorf("create bot api: %w", err)
+	}
+
+	permChecker := permissionchecker.New(api)
+
+	handler, cleanup, err := MakeMsgHandler(
+		botToken,
+		api,
+		permChecker,
+		pgCfg,
+		profanityCfg,
+		commandStorageCfg,
+		banCfg,
+		rankingsCfg,
+	)
+
+	if err != nil {
+		return nil, nil, fmt.Errorf("make msg handler: %w", err)
+	}
+
+	msgProc := msgprocessor.NewMsgProcessor(handler, permChecker, true, true)
+
+	return msgProc, cleanup, nil
+}
+
+func MakeMsgHandler(
+	botToken string,
+	api *tgbotapi.BotAPI,
+	permChecker port.PermissionChecker,
+	pgCfg config.Postgres,
+	profanityCfg config.Profanity,
+	commandStorageCfg config.CommandRedis,
+	banCfg config.BanRedis,
+	rankingsCfg config.RankingsRedis,
+) (msgprocessor.MsgHandler, func(), error) {
 	pg, cleanup, err := InitPostgres(pgCfg)
 	if err != nil {
 		return nil, nil, fmt.Errorf("init postgres: %w", err)
@@ -65,11 +103,6 @@ func MakeMsgProcessor(
 	}
 
 	replacer := MakeProfanityReplacer(profanityCfg, MakeMatcher(pg, words))
-
-	api, err := newBotAPI(botToken)
-	if err != nil {
-		return nil, nil, fmt.Errorf("create bot api: %w", err)
-	}
 
 	commandStorage, err := makeCommandStorage(commandStorageCfg)
 	if err != nil {
@@ -91,7 +124,7 @@ func MakeMsgProcessor(
 		msgsender.New(api),
 		makeWordsProviderFromPG(pg, words),
 		makeWordsUpdaterFromPG(pg),
-		permissionchecker.New(api),
+		permChecker,
 		commandStorage,
 		banProcessor,
 		rankingsProcessor,
