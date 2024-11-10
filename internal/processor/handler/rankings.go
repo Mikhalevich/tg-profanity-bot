@@ -1,4 +1,4 @@
-package processor
+package handler
 
 import (
 	"context"
@@ -67,23 +67,23 @@ var (
 	}
 )
 
-func (p *processor) Rankings(ctx context.Context, info port.MessageInfo, monthArg string) error {
+func (h *handler) Rankings(ctx context.Context, info port.MessageInfo, monthArg string) error {
 	var (
 		month       = parseMonth(monthArg)
 		rankingsKey = makeRankingsKey(info.ChatID.String(), month)
 	)
 
-	topScores, err := p.rankings.Top(ctx, rankingsKey)
+	topScores, err := h.rankings.Top(ctx, rankingsKey)
 	if err != nil {
 		return fmt.Errorf("rankings top: %w", err)
 	}
 
-	msg, format, err := p.makeFormattedRankingsMsg(ctx, month, info.ChatID.Int64(), topScores)
+	msg, format, err := h.makeFormattedRankingsMsg(ctx, month, info.ChatID.Int64(), topScores)
 	if err != nil {
 		return fmt.Errorf("make ranking msg: %w", err)
 	}
 
-	if err := p.msgSender.Reply(ctx, info, msg, convertFormatToOptions(format)...); err != nil {
+	if err := h.msgSender.Reply(ctx, info, msg, convertFormatToOptions(format)...); err != nil {
 		return fmt.Errorf("msg reply: %w", err)
 	}
 
@@ -146,7 +146,7 @@ func parseMonthByName(monthArg string) string {
 	return ""
 }
 
-func (p *processor) makeFormattedRankingsMsg(
+func (h *handler) makeFormattedRankingsMsg(
 	ctx context.Context,
 	month string,
 	chatID int64,
@@ -167,7 +167,7 @@ func (p *processor) makeFormattedRankingsMsg(
 			return "", nil, fmt.Errorf("invalid id %q: %w", user.UserID, err)
 		}
 
-		userInfo, err := p.permissionChecker.UserInfo(ctx, chatID, id.Int64())
+		userInfo, err := h.permissionChecker.UserInfo(ctx, chatID, id.Int64())
 		if err != nil {
 			return "", nil, fmt.Errorf("get user name: %w", err)
 		}

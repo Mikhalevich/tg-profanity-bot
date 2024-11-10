@@ -1,4 +1,4 @@
-package processor
+package handler
 
 import (
 	"context"
@@ -24,7 +24,7 @@ func (s *ProcessorSuit) TestCommandWordsUpdaterError() {
 
 	s.wordsUpdater.EXPECT().IsNothingUpdatedError(unexpectedErr).Return(false)
 
-	err := s.processor.AddWordCommand(ctx, port.MessageInfo{
+	err := s.handler.AddWordCommand(ctx, port.MessageInfo{
 		MessageID: messageID,
 		ChatID:    port.NewID(chatID),
 		UserID:    port.NewID(userID),
@@ -47,7 +47,7 @@ func (s *ProcessorSuit) TestCallbackQueryWordsUpdaterError() {
 
 	s.wordsUpdater.EXPECT().IsNothingUpdatedError(unexpectedErr).Return(false)
 
-	err := s.processor.AddWordCallbackQuery(ctx, port.MessageInfo{
+	err := s.handler.AddWordCallbackQuery(ctx, port.MessageInfo{
 		MessageID: messageID,
 		ChatID:    port.NewID(chatID),
 		UserID:    port.NewID(userID),
@@ -77,7 +77,7 @@ func (s *ProcessorSuit) TestCommandWordAlreadyExists() {
 
 	s.msgSender.EXPECT().Reply(ctx, msgInfo, "this word already exists")
 
-	err := s.processor.AddWordCommand(ctx, msgInfo, word)
+	err := s.handler.AddWordCommand(ctx, msgInfo, word)
 
 	s.Require().NoError(err)
 }
@@ -103,7 +103,7 @@ func (s *ProcessorSuit) TestCommandWordAlreadyExistsReplyError() {
 
 	s.msgSender.EXPECT().Reply(ctx, msgInfo, "this word already exists").Return(errors.New("reply error"))
 
-	err := s.processor.AddWordCommand(ctx, msgInfo, word)
+	err := s.handler.AddWordCommand(ctx, msgInfo, word)
 
 	s.Require().EqualError(err, "reply already exists: reply error")
 }
@@ -131,7 +131,7 @@ func (s *ProcessorSuit) TestCommandWordsUpdatedSuccessfully() {
 
 	s.msgSender.EXPECT().Reply(ctx, msgInfo, "words updated successfully", gomock.Any())
 
-	err := s.processor.AddWordCommand(ctx, msgInfo, word)
+	err := s.handler.AddWordCommand(ctx, msgInfo, word)
 
 	s.Require().NoError(err)
 }
@@ -154,7 +154,7 @@ func (s *ProcessorSuit) TestCallbackQueryWordsUpdatedSuccessfully() {
 
 	s.msgSender.EXPECT().Reply(ctx, msgInfo, "words updated successfully", gomock.Any())
 
-	err := s.processor.AddWordCallbackQuery(ctx, msgInfo, word)
+	err := s.handler.AddWordCallbackQuery(ctx, msgInfo, word)
 
 	s.Require().NoError(err)
 }

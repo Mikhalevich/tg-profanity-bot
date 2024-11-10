@@ -26,7 +26,7 @@ import (
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/bot"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/infra/logger"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/processor"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/handler"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/msgprocessor"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
@@ -95,7 +95,7 @@ func MakeMsgProcessor(
 		return nil, nil, fmt.Errorf("rankings processor: %w", err)
 	}
 
-	handler := processor.New(
+	handler := handler.New(
 		replacer,
 		msgsender.New(api),
 		wordsProvider,
