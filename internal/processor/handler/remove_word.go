@@ -1,4 +1,4 @@
-package processor
+package handler
 
 import (
 	"context"
@@ -9,31 +9,31 @@ import (
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
-func (p *processor) RemoveWordCommand(
+func (h *handler) RemoveWordCommand(
 	ctx context.Context,
 	info port.MessageInfo,
 	cmdArgs string,
 ) error {
 	word := strings.TrimSpace(cmdArgs)
 
-	return p.removeWord(
+	return h.removeWord(
 		ctx,
 		info,
 		word,
 		func() []port.Option {
 			return []port.Option{
-				port.WithButton(p.revertButton(ctx, cbquery.Add, word)),
+				port.WithButton(h.revertButton(ctx, cbquery.Add, word)),
 			}
 		},
 	)
 }
 
-func (p *processor) RemoveWordCallbackQuery(
+func (h *handler) RemoveWordCallbackQuery(
 	ctx context.Context,
 	info port.MessageInfo,
 	word string,
 ) error {
-	return p.removeWord(
+	return h.removeWord(
 		ctx,
 		info,
 		word,
@@ -41,25 +41,25 @@ func (p *processor) RemoveWordCallbackQuery(
 	)
 }
 
-func (p *processor) removeWord(
+func (h *handler) removeWord(
 	ctx context.Context,
 	info port.MessageInfo,
 	word string,
 	options delayedOption,
 ) error {
-	if err := p.wordsUpdater.RemoveWord(ctx, info.ChatID.String(), word); err != nil {
-		if !p.wordsUpdater.IsNothingUpdatedError(err) {
+	if err := h.wordsUpdater.RemoveWord(ctx, info.ChatID.String(), word); err != nil {
+		if !h.wordsUpdater.IsNothingUpdatedError(err) {
 			return fmt.Errorf("remove word: %w", err)
 		}
 
-		if err := p.msgSender.Reply(ctx, info, "no such word"); err != nil {
+		if err := h.msgSender.Reply(ctx, info, "no such word"); err != nil {
 			return fmt.Errorf("reply no such word: %w", err)
 		}
 
 		return nil
 	}
 
-	if err := p.msgSender.Reply(ctx, info, "words updated successfully", options()...); err != nil {
+	if err := h.msgSender.Reply(ctx, info, "words updated successfully", options()...); err != nil {
 		return fmt.Errorf("success reply: %w", err)
 	}
 

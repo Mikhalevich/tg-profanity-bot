@@ -1,4 +1,4 @@
-package processor
+package handler
 
 import (
 	"context"
@@ -24,7 +24,7 @@ func (s *ProcessorSuit) TestRemoveWordCommandWordsUpdaterError() {
 
 	s.wordsUpdater.EXPECT().IsNothingUpdatedError(unexpectedErr).Return(false)
 
-	err := s.processor.RemoveWordCommand(ctx, port.MessageInfo{
+	err := s.handler.RemoveWordCommand(ctx, port.MessageInfo{
 		MessageID: messageID,
 		ChatID:    port.NewID(chatID),
 		UserID:    port.NewID(userID),
@@ -47,7 +47,7 @@ func (s *ProcessorSuit) TestRemoveWordCallbackQueryWordsUpdaterError() {
 
 	s.wordsUpdater.EXPECT().IsNothingUpdatedError(unexpectedErr).Return(false)
 
-	err := s.processor.RemoveWordCallbackQuery(ctx, port.MessageInfo{
+	err := s.handler.RemoveWordCallbackQuery(ctx, port.MessageInfo{
 		MessageID: messageID,
 		ChatID:    port.NewID(chatID),
 		UserID:    port.NewID(userID),
@@ -77,7 +77,7 @@ func (s *ProcessorSuit) TestRemoveWordCommandAlreadyExistsError() {
 
 	s.msgSender.EXPECT().Reply(ctx, msgInfo, "no such word").Return(nil)
 
-	err := s.processor.RemoveWordCommand(ctx, msgInfo, word)
+	err := s.handler.RemoveWordCommand(ctx, msgInfo, word)
 
 	s.Require().NoError(err)
 }
@@ -103,7 +103,7 @@ func (s *ProcessorSuit) TestRemoveWordCallbackQueryAlreadyExistsError() {
 
 	s.msgSender.EXPECT().Reply(ctx, msgInfo, "no such word").Return(nil)
 
-	err := s.processor.RemoveWordCallbackQuery(ctx, msgInfo, word)
+	err := s.handler.RemoveWordCallbackQuery(ctx, msgInfo, word)
 
 	s.Require().NoError(err)
 }
@@ -129,7 +129,7 @@ func (s *ProcessorSuit) TestRemoveWordCommandAlreadyExistsReplyError() {
 
 	s.msgSender.EXPECT().Reply(ctx, msgInfo, "no such word").Return(errors.New("some reply error"))
 
-	err := s.processor.RemoveWordCommand(ctx, msgInfo, word)
+	err := s.handler.RemoveWordCommand(ctx, msgInfo, word)
 
 	s.Require().EqualError(err, "reply no such word: some reply error")
 }
@@ -155,7 +155,7 @@ func (s *ProcessorSuit) TestRemoveWordCallbackQueryAlreadyExistsReplyError() {
 
 	s.msgSender.EXPECT().Reply(ctx, msgInfo, "no such word").Return(errors.New("some reply error"))
 
-	err := s.processor.RemoveWordCallbackQuery(ctx, msgInfo, word)
+	err := s.handler.RemoveWordCallbackQuery(ctx, msgInfo, word)
 
 	s.Require().EqualError(err, "reply no such word: some reply error")
 }
@@ -185,7 +185,7 @@ func (s *ProcessorSuit) TestRemoveWordCommandReplyError() {
 		Reply(ctx, msgInfo, "words updated successfully", gomock.Any()).
 		Return(errors.New("some reply error"))
 
-	err := s.processor.RemoveWordCommand(ctx, msgInfo, word)
+	err := s.handler.RemoveWordCommand(ctx, msgInfo, word)
 
 	s.Require().EqualError(err, "success reply: some reply error")
 }
@@ -210,7 +210,7 @@ func (s *ProcessorSuit) TestRemoveWordCallbackQueryReplyError() {
 		Reply(ctx, msgInfo, "words updated successfully", gomock.Any()).
 		Return(errors.New("some reply error"))
 
-	err := s.processor.RemoveWordCallbackQuery(ctx, msgInfo, word)
+	err := s.handler.RemoveWordCallbackQuery(ctx, msgInfo, word)
 
 	s.Require().EqualError(err, "success reply: some reply error")
 }
@@ -240,7 +240,7 @@ func (s *ProcessorSuit) TestRemoveWordCommandSuccessReply() {
 		Reply(ctx, msgInfo, "words updated successfully", gomock.Any()).
 		Return(nil)
 
-	err := s.processor.RemoveWordCommand(ctx, msgInfo, word)
+	err := s.handler.RemoveWordCommand(ctx, msgInfo, word)
 
 	s.Require().NoError(err)
 }
@@ -265,7 +265,7 @@ func (s *ProcessorSuit) TestRemoveWordCallbackQuerySuccessReply() {
 		Reply(ctx, msgInfo, "words updated successfully", gomock.Any()).
 		Return(nil)
 
-	err := s.processor.RemoveWordCallbackQuery(ctx, msgInfo, word)
+	err := s.handler.RemoveWordCallbackQuery(ctx, msgInfo, word)
 
 	s.Require().NoError(err)
 }
@@ -296,7 +296,7 @@ func (s *ProcessorSuit) TestRemoveWordCommandWordWithSpacesSuccessReply() {
 		Reply(ctx, msgInfo, "words updated successfully", gomock.Any()).
 		Return(nil)
 
-	err := s.processor.RemoveWordCommand(ctx, msgInfo, spacesWord)
+	err := s.handler.RemoveWordCommand(ctx, msgInfo, spacesWord)
 
 	s.Require().NoError(err)
 }
@@ -321,7 +321,7 @@ func (s *ProcessorSuit) TestRemoveWordCallbackQueryWordWithSpacesSuccessReply() 
 		Reply(ctx, msgInfo, "words updated successfully", gomock.Any()).
 		Return(nil)
 
-	err := s.processor.RemoveWordCallbackQuery(ctx, msgInfo, spacesWord)
+	err := s.handler.RemoveWordCallbackQuery(ctx, msgInfo, spacesWord)
 
 	s.Require().NoError(err)
 }

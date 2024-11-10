@@ -1,4 +1,4 @@
-package processor
+package handler
 
 import (
 	"testing"
@@ -22,7 +22,7 @@ type ProcessorSuit struct {
 	banProcessor      *port.MockBanProcessor
 	rankings          *port.MockRankings
 
-	processor *processor
+	handler *handler
 }
 
 func TestProcessorSuit(t *testing.T) {
@@ -44,7 +44,7 @@ func (s *ProcessorSuit) SetupSuite() {
 	s.banProcessor = port.NewMockBanProcessor(s.ctrl)
 	s.rankings = port.NewMockRankings(s.ctrl)
 
-	s.processor = New(
+	s.handler = New(
 		s.mangler,
 		s.msgSender,
 		s.wordsProvider,

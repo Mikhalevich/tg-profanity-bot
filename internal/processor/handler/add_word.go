@@ -1,4 +1,4 @@
-package processor
+package handler
 
 import (
 	"context"
@@ -9,23 +9,23 @@ import (
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
-func (p *processor) AddWordCommand(ctx context.Context, info port.MessageInfo, cmdArgs string) error {
+func (h *handler) AddWordCommand(ctx context.Context, info port.MessageInfo, cmdArgs string) error {
 	word := strings.TrimSpace(cmdArgs)
 
-	return p.addWord(
+	return h.addWord(
 		ctx,
 		info,
 		word,
 		func() []port.Option {
 			return []port.Option{
-				port.WithButton(p.revertButton(ctx, cbquery.Remove, word)),
+				port.WithButton(h.revertButton(ctx, cbquery.Remove, word)),
 			}
 		},
 	)
 }
 
-func (p *processor) AddWordCallbackQuery(ctx context.Context, info port.MessageInfo, word string) error {
-	return p.addWord(
+func (h *handler) AddWordCallbackQuery(ctx context.Context, info port.MessageInfo, word string) error {
+	return h.addWord(
 		ctx,
 		info,
 		word,
@@ -39,25 +39,25 @@ func nopeDelayedOption() []port.Option {
 	return nil
 }
 
-func (p *processor) addWord(
+func (h *handler) addWord(
 	ctx context.Context,
 	info port.MessageInfo,
 	word string,
 	options delayedOption,
 ) error {
-	if err := p.wordsUpdater.AddWord(ctx, info.ChatID.String(), word); err != nil {
-		if !p.wordsUpdater.IsNothingUpdatedError(err) {
+	if err := h.wordsUpdater.AddWord(ctx, info.ChatID.String(), word); err != nil {
+		if !h.wordsUpdater.IsNothingUpdatedError(err) {
 			return fmt.Errorf("add word: %w", err)
 		}
 
-		if err := p.msgSender.Reply(ctx, info, "this word already exists"); err != nil {
+		if err := h.msgSender.Reply(ctx, info, "this word already exists"); err != nil {
 			return fmt.Errorf("reply already exists: %w", err)
 		}
 
 		return nil
 	}
 
-	if err := p.msgSender.Reply(ctx, info, "words updated successfully", options()...); err != nil {
+	if err := h.msgSender.Reply(ctx, info, "words updated successfully", options()...); err != nil {
 		return fmt.Errorf("success reply: %w", err)
 	}
 

@@ -1,4 +1,4 @@
-package processor
+package handler
 
 import (
 	"context"
@@ -8,13 +8,13 @@ import (
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
-func (p *processor) GetAllWords(ctx context.Context, info port.MessageInfo, cmdArgs string) error {
-	words, err := p.wordsProvider.ChatWords(ctx, info.ChatID.String())
+func (h *handler) GetAllWords(ctx context.Context, info port.MessageInfo, cmdArgs string) error {
+	words, err := h.wordsProvider.ChatWords(ctx, info.ChatID.String())
 	if err != nil {
 		return fmt.Errorf("get chat words: %w", err)
 	}
 
-	if err := p.msgSender.Reply(ctx, info, msgFromWords(words)); err != nil {
+	if err := h.msgSender.Reply(ctx, info, msgFromWords(words)); err != nil {
 		return fmt.Errorf("msg reply: %w", err)
 	}
 

@@ -26,7 +26,8 @@ import (
 	"github.com/Mikhalevich/tg-profanity-bot/internal/app/bot"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/config"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/infra/logger"
-	"github.com/Mikhalevich/tg-profanity-bot/internal/processor"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/handler"
+	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/msgprocessor"
 	"github.com/Mikhalevich/tg-profanity-bot/internal/processor/port"
 )
 
@@ -46,6 +47,7 @@ func MakeMatcher(pg *postgres.Postgres, words []string) mangler.Matcher {
 	return matcher.NewAhocorasick(words)
 }
 
+//nolint:funlen
 func MakeMsgProcessor(
 	botToken string,
 	pgCfg config.Postgres,
@@ -59,17 +61,24 @@ func MakeMsgProcessor(
 		return nil, nil, fmt.Errorf("init postgres: %w", err)
 	}
 
+	api, err := newBotAPI(botToken)
+	if err != nil {
+		return nil, nil, fmt.Errorf("create bot api: %w", err)
+	}
+
 	words, err := config.BadWords()
 	if err != nil {
 		return nil, nil, fmt.Errorf("get bad words: %w", err)
 	}
 
-	replacer := MakeProfanityReplacer(profanityCfg, MakeMatcher(pg, words))
+	var (
+		matcher                                 = MakeMatcher(pg, words)
+		permChecker                             = permissionchecker.New(api)
+		wordsProvider                           = makeWordsProviderFromPG(pg, words)
+		wordsUpdater, wordsModificationsEnabled = makeWordsUpdaterFromPG(pg)
+	)
 
-	api, err := newBotAPI(botToken)
-	if err != nil {
-		return nil, nil, fmt.Errorf("create bot api: %w", err)
-	}
+	replacer := MakeProfanityReplacer(profanityCfg, matcher)
 
 	commandStorage, err := makeCommandStorage(commandStorageCfg)
 	if err != nil {
@@ -81,21 +90,30 @@ func MakeMsgProcessor(
 		return nil, nil, fmt.Errorf("ban processor: %w", err)
 	}
 
-	rankingsProcessor, err := makeRankings(rankingsCfg)
+	rankingsProcessor, rankingsEnabled, err := makeRankings(rankingsCfg)
 	if err != nil {
 		return nil, nil, fmt.Errorf("rankings processor: %w", err)
 	}
 
-	return processor.New(
+	handler := handler.New(
 		replacer,
 		msgsender.New(api),
-		makeWordsProviderFromPG(pg, words),
-		makeWordsUpdaterFromPG(pg),
-		permissionchecker.New(api),
+		wordsProvider,
+		wordsUpdater,
+		permChecker,
 		commandStorage,
 		banProcessor,
 		rankingsProcessor,
-	), cleanup, nil
+	)
+
+	msgProc := msgprocessor.NewMsgProcessor(
+		handler,
+		permChecker,
+		wordsModificationsEnabled,
+		rankingsEnabled,
+	)
+
+	return msgProc, cleanup, nil
 }
 
 func newBotAPI(token string) (*tgbotapi.BotAPI, error) {
@@ -115,12 +133,12 @@ func makeWordsProviderFromPG(pg *postgres.Postgres, words []string) port.WordsPr
 	return staticwords.New(words, nil)
 }
 
-func makeWordsUpdaterFromPG(pg *postgres.Postgres) port.WordsUpdater {
+func makeWordsUpdaterFromPG(pg *postgres.Postgres) (port.WordsUpdater, bool) {
 	if pg != nil {
-		return pg
+		return pg, true
 	}
 
-	return nil
+	return nil, false
 }
 
 func InitPostgres(cfg config.Postgres) (*postgres.Postgres, func(), error) {
@@ -188,10 +206,9 @@ func makeBanProcessor(cfg config.BanRedis) (port.BanProcessor, error) {
 	return banprocessor.NewRedisBanProcessor(rdb, cfg.BanTTL, cfg.ViolationsPerHour), nil
 }
 
-func makeRankings(cfg config.RankingsRedis) (port.Rankings, error) {
+func makeRankings(cfg config.RankingsRedis) (port.Rankings, bool, error) {
 	if cfg.Addr == "" {
-		//nolint:nilnil
-		return nil, nil
+		return nil, false, nil
 	}
 
 	rdb := redis.NewClient(&redis.Options{
@@ -201,14 +218,14 @@ func makeRankings(cfg config.RankingsRedis) (port.Rankings, error) {
 	})
 
 	if err := redisotel.InstrumentTracing(rdb); err != nil {
-		return nil, fmt.Errorf("redis instrument tracing: %w", err)
+		return nil, false, fmt.Errorf("redis instrument tracing: %w", err)
 	}
 
 	if err := rdb.Ping(context.Background()).Err(); err != nil {
-		return nil, fmt.Errorf("redis ping: %w", err)
+		return nil, false, fmt.Errorf("redis ping: %w", err)
 	}
 
-	return rankings.NewRedisRankings(rdb, cfg.TTL), nil
+	return rankings.NewRedisRankings(rdb, cfg.TTL), true, nil
 }
 
 // MakeRabbitAMQPChannel make rabbitmq channel and returns channel itself, clearing func and error.
