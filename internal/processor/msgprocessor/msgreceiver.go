@@ -39,8 +39,8 @@ type msgprocessor struct {
 func NewMsgProcessor(
 	handler MsgHandler,
 	permissionChecker port.PermissionChecker,
-	isWordsModificationsSupported bool,
-	isRankingsSupported bool,
+	isWordsModificationsEnabled bool,
+	isRankingsEnabled bool,
 ) *msgprocessor {
 	m := &msgprocessor{
 		handler:           handler,
@@ -49,22 +49,22 @@ func NewMsgProcessor(
 		buttonsRouter:     router.NewRouter[cbquery.CBQUERY](),
 	}
 
-	m.initCommandRoutes(isWordsModificationsSupported, isRankingsSupported)
-	m.initButtonsRoutes(isWordsModificationsSupported)
+	m.initCommandRoutes(isWordsModificationsEnabled, isRankingsEnabled)
+	m.initButtonsRoutes(isWordsModificationsEnabled)
 
 	return m
 }
 
 func (m *msgprocessor) initCommandRoutes(
-	isWordsModificationsSupported bool,
-	isRankingsSupported bool,
+	isWordsModificationsEnabled bool,
+	isRankingsEnabled bool,
 ) {
 	m.cmdRouter.AddRoute(cmd.GetAll, router.Route{
 		Handler: m.handler.GetAllWords,
 		Perm:    router.Admin,
 	})
 
-	if isWordsModificationsSupported {
+	if isWordsModificationsEnabled {
 		m.cmdRouter.AddRoute(cmd.Add, router.Route{
 			Handler: m.handler.AddWordCommand,
 			Perm:    router.Admin,
@@ -86,7 +86,7 @@ func (m *msgprocessor) initCommandRoutes(
 		})
 	}
 
-	if isRankingsSupported {
+	if isRankingsEnabled {
 		m.cmdRouter.AddRoute(cmd.Rankings, router.Route{
 			Handler: m.handler.Rankings,
 			Perm:    router.Member,
@@ -94,7 +94,7 @@ func (m *msgprocessor) initCommandRoutes(
 	}
 }
 
-func (m *msgprocessor) initButtonsRoutes(isWordsModificationsSupported bool) {
+func (m *msgprocessor) initButtonsRoutes(isWordsModificationsEnabled bool) {
 	m.buttonsRouter.AddRoute(cbquery.ViewOrginMsg, router.Route{
 		Handler: m.handler.ViewOriginMsgCallbackQuery,
 		Perm:    router.Admin,
@@ -110,7 +110,7 @@ func (m *msgprocessor) initButtonsRoutes(isWordsModificationsSupported bool) {
 		Perm:    router.Admin,
 	})
 
-	if isWordsModificationsSupported {
+	if isWordsModificationsEnabled {
 		m.buttonsRouter.AddRoute(cbquery.Add, router.Route{
 			Handler: m.handler.AddWordCallbackQuery,
 			Perm:    router.Admin,
